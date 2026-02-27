@@ -1,0 +1,482 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+//
+// ENUMS
+//
+
+enum TipoOperacao {
+  permanente
+  evento
+}
+
+enum StatusEstabelecimento {
+  rascunho
+  ativo
+  inativo
+  encerrado
+}
+
+enum StatusConfiguracaoMapa {
+  pendente
+  em_configuracao
+  publicado
+}
+
+enum PermissaoAdmin {
+  importar_mapas_e_configurar_geofence
+  gerenciar_pois
+  gerenciar_socorrista
+  configurar_codigos_internos
+  gerar_codigos_qr
+  configurar_redes_wifi
+  consultar_metricas
+  gerenciar_barreiras
+  consultar_historico
+}
+
+enum TipoPOI {
+  dea
+  extintor
+  saida_emergencia
+  escada
+  elevador
+  rampa
+  ponto_encontro
+  posto_medico
+  hidrante
+  outro
+}
+
+enum StatusPOI {
+  ativo
+  inativo
+  em_manutencao
+}
+
+enum VisibilidadePOI {
+  publico
+  somente_socorrista
+}
+
+enum AcessibilidadePOI {
+  acessivel
+  nao_acessivel
+  desconhecido
+}
+
+enum StatusCodigo {
+  ativo
+  revogado
+  expirado
+}
+
+enum StatusRede {
+  ativa
+  inativa
+}
+
+enum TipoBarreira {
+  area_interditada
+  passagem_bloqueada
+  escada_inoperante
+  elevador_inoperante
+  rampa_inoperante
+  obra
+  evento_temporario
+  risco_localizado
+  outro
+}
+
+enum SeveridadeBarreira {
+  informativa
+  atencao
+  critico
+}
+
+enum VisibilidadeBarreira {
+  publica
+  somente_socorrista
+}
+
+enum StatusBarreira {
+  agendada
+  ativa
+  inativa
+  encerrada
+}
+
+enum StatusAtendimento {
+  aberto
+  em_atendimento
+  finalizado
+}
+
+//
+// CLIENTE
+//
+
+model Cliente {
+  id        String   @id @default(cuid())
+  nome      String
+  cnpj      String   @unique
+  email     String?
+  telefone  String?
+  status    String   @default("ativo")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  estabelecimentos Estabelecimento[]
+  usuarios         UsuarioAdmin[]
+}
+
+//
+// ESTABELECIMENTO
+//
+
+model Estabelecimento {
+  id                     String   @id @default(cuid())
+  nome                   String
+
+  clienteId              String
+  cliente                Cliente @relation(fields: [clienteId], references: [id])
+
+  tipoOperacao           TipoOperacao @default(permanente)
+  dataInicioEvento       DateTime?
+  dataFimEvento          DateTime?
+
+  documentoIdentificacao String   @unique
+
+  categoria              String
+  categoriaOutro         String?
+
+  logradouro             String
+  numero                 String
+  bairro                 String
+  cidade                 String
+  uf                     String   @db.VarChar(2)
+  cep                    String   @db.VarChar(8)
+  complemento            String?
+
+  capacidadeEstimada     Int      @default(0)
+
+  statusConfiguracaoMapa StatusConfiguracaoMapa @default(pendente)
+  statusEstabelecimento  StatusEstabelecimento  @default(rascunho)
+
+  observacoesInternas    String? @db.Text
+
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  administradores  UsuarioAdmin[]
+  andares          Andar[]
+  socorristas      Socorrista[]
+  codigosAcesso    CodigoAcesso[]
+  redesWifi        RedeWifi[]
+  pois             POI[]
+  barreiras        Barreira[]
+  metricas         Metrica[]
+  atendimentos     Atendimento[]
+
+  @@index([clienteId])
+  @@index([statusEstabelecimento])
+}
+
+//
+// ANDAR
+//
+
+model Andar {
+  id                String   @id @default(cuid())
+  nome              String
+  numero            Int
+
+  estabelecimentoId String
+  estabelecimento   Estabelecimento @relation(fields: [estabelecimentoId], references: [id])
+
+  pois        POI[]
+  barreiras   Barreira[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([estabelecimentoId, numero])
+}
+
+//
+// USUARIO ADMIN
+//
+
+model UsuarioAdmin {
+  id                String   @id @default(cuid())
+  nome              String
+  usuario           String
+  telefoneSms       String?
+  senha             String
+
+  estabelecimentoId String
+  estabelecimento   Estabelecimento @relation(fields: [estabelecimentoId], references: [id])
+
+  clienteId         String
+  cliente           Cliente @relation(fields: [clienteId], references: [id])
+
+  permissoes        PermissaoAdmin[]
+
+  obrigarTrocaPrimeiroAcesso Boolean @default(true)
+  status                     String  @default("ativo")
+
+  observacoes String? @db.Text
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  ultimoLogin DateTime?
+
+  @@unique([clienteId, usuario])
+  @@unique([estabelecimentoId, nome])
+  @@index([estabelecimentoId])
+  @@index([clienteId])
+}
+
+//
+// SOCORRISTA
+//
+
+model Socorrista {
+  id                String   @id @default(cuid())
+  nome              String
+  usuario           String
+  telefoneSms       String?
+  status            String   @default("ativo")
+  observacoes       String?  @db.Text
+
+  estabelecimentoId String
+  estabelecimento   Estabelecimento @relation(fields: [estabelecimentoId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  ultimoLogin DateTime?
+
+  atendimentos Atendimento[]
+
+  @@unique([estabelecimentoId, usuario])
+  @@index([estabelecimentoId])
+}
+
+//
+// POI
+//
+
+model POI {
+  id        String   @id @default(cuid())
+  tipo      TipoPOI
+  tipoOutro String?
+  nome      String
+
+  andarId   String
+  andar     Andar @relation(fields: [andarId], references: [id])
+
+  posicao        Json
+  acessibilidade AcessibilidadePOI @default(desconhecido)
+  status         StatusPOI @default(ativo)
+  visibilidade   VisibilidadePOI @default(publico)
+
+  capacidadeDetalhe String?
+  orientacaoTexto   String? @db.Text
+  prioridadeRota    Int @default(3)
+
+  criadoPor  String
+  criadoEm   DateTime @default(now())
+  alteradoPor String?
+  alteradoEm DateTime?
+
+  estabelecimentoId String
+  estabelecimento   Estabelecimento @relation(fields: [estabelecimentoId], references: [id])
+
+  atendimentos Atendimento[]
+
+  @@unique([andarId, tipo, nome])
+  @@index([estabelecimentoId])
+  @@index([andarId])
+}
+
+//
+// ATENDIMENTO
+//
+
+model Atendimento {
+  id                String   @id @default(cuid())
+
+  socorristaId      String
+  socorrista        Socorrista @relation(fields: [socorristaId], references: [id])
+
+  poiId             String
+  poi               POI @relation(fields: [poiId], references: [id])
+
+  estabelecimentoId String
+  estabelecimento   Estabelecimento @relation(fields: [estabelecimentoId], references: [id])
+
+  descricao         String? @db.Text
+  status            StatusAtendimento @default(aberto)
+  prioridade        Int @default(3)
+
+  iniciadoEm   DateTime @default(now())
+  finalizadoEm DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([estabelecimentoId])
+  @@index([socorristaId])
+  @@index([poiId])
+}
+
+//
+// CODIGO ACESSO
+//
+
+model CodigoAcesso {
+  id                String   @id @default(cuid())
+  codigo            String
+  descricao         String?
+
+  validadeInicio    DateTime
+  validadeFim       DateTime?
+
+  status            StatusCodigo @default(ativo)
+  qrCode            String?
+
+  estabelecimentoId String
+  estabelecimento   Estabelecimento @relation(fields: [estabelecimentoId], references: [id])
+
+  criadoPor  String
+  criadoEm   DateTime @default(now())
+  alteradoPor String?
+  alteradoEm DateTime?
+
+  @@unique([estabelecimentoId, codigo])
+  @@index([estabelecimentoId])
+}
+
+//
+// REDE WIFI
+//
+
+model RedeWifi {
+  id                String   @id @default(cuid())
+  nomeExibicao      String
+  ssid              String
+
+  possuiPortalCaptivo Boolean @default(false)
+  instrucoes          String? @db.Text
+
+  validadeInicio DateTime
+  validadeFim    DateTime?
+
+  status StatusRede @default(ativa)
+
+  estabelecimentoId String
+  estabelecimento   Estabelecimento @relation(fields: [estabelecimentoId], references: [id])
+
+  criadoPor  String
+  criadoEm   DateTime @default(now())
+  alteradoPor String?
+  alteradoEm DateTime?
+
+  @@unique([estabelecimentoId, ssid, validadeInicio])
+  @@index([estabelecimentoId])
+}
+
+//
+// BARREIRA
+//
+
+model Barreira {
+  id        String @id @default(cuid())
+
+  tipo      TipoBarreira
+  tipoOutro String?
+  nome      String
+
+  andarId   String
+  andar     Andar @relation(fields: [andarId], references: [id])
+
+  posicao   Json
+
+  severidade   SeveridadeBarreira @default(atencao)
+  visibilidade VisibilidadeBarreira @default(publica)
+
+  periodoInicio DateTime
+  periodoFim    DateTime?
+
+  status   StatusBarreira @default(agendada)
+  mensagem String? @db.Text
+
+  criadoPor  String
+  criadoEm   DateTime @default(now())
+  alteradoPor String?
+  alteradoEm DateTime?
+  ativadoEm  DateTime?
+  encerradoEm DateTime?
+
+  estabelecimentoId String
+  estabelecimento   Estabelecimento @relation(fields: [estabelecimentoId], references: [id])
+
+  @@unique([andarId, nome, status])
+  @@index([estabelecimentoId])
+  @@index([status])
+}
+
+//
+// METRICA
+//
+
+model Metrica {
+  id                String   @id @default(cuid())
+
+  estabelecimentoId String
+  estabelecimento   Estabelecimento @relation(fields: [estabelecimentoId], references: [id])
+
+  tipo           String
+  valor          Float
+  referenciaData DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([estabelecimentoId])
+  @@index([referenciaData])
+}
+
+//
+// AUDITORIA
+//
+
+model Auditoria {
+  id        String   @id @default(cuid())
+  dataHora  DateTime @default(now())
+
+  usuarioResponsavel String?
+  perfil             String?
+
+  estabelecimentoId String?
+  estabelecimento   Estabelecimento? @relation(fields: [estabelecimentoId], references: [id])
+
+  tipoEvento     String
+  recursoAfetado String
+  recursoId      String?
+  resultado      String
+
+  origemRequisicao String?
+  detalhes         Json?
+
+  @@index([estabelecimentoId])
+  @@index([dataHora])
+  @@index([tipoEvento])
+}
