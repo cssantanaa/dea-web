@@ -1,10 +1,10 @@
 import { prisma } from '@/lib/prisma'
-import { criarAdministradorSchema, atualizarAdministradorSchema } from '../schemas/administrador.schema'
+import { CriarAdministrador, AtualizarAdministrador } from '../schema/administrador.schema'
 import { auditoriaService } from './auditoria.service'
 import bcrypt from 'bcryptjs'
 
 export const administradorService = {
-    async criar(data: criarAdministradorSchema, usuarioId: string) {
+    async criar(data: CriarAdministrador, usuarioId: string) {
         const estabelecimento = await prisma.estabelecimento.findUnique({
         where: { id: data.estabelecimentoId },
         include: { cliente: true },
@@ -117,7 +117,7 @@ export const administradorService = {
         return administrador
     },
 
-    async atualizar(id: string, data: atualizarAdministradorSchema, usuarioId: string) {
+    async atualizar(id: string, data: AtualizarAdministrador, usuarioId: string) {
         const administrador = await prisma.usuarioAdmin.findUnique({ where: { id } })
         if (!administrador) throw new Error('Administrador não encontrado')
 

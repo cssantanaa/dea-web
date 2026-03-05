@@ -50,5 +50,5 @@ export const codigoIdSchema = z.object({
     id: z.cuid('ID inválido'),
 })
 
-export type CriarCodigoInput = z.infer<typeof criarCodigoSchema>
-export type AtualizarCodigoInput = z.infer<typeof atualizarCodigoSchema>
+export type CriarCodigo = z.infer<typeof criarCodigoSchema>
+export type AtualizarCodigo = z.infer<typeof atualizarCodigoSchema>

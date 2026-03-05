@@ -1,4 +1,3 @@
-// src/services/auditoria.service.ts
 import { prisma } from '@/lib/prisma'
 
 type TipoEvento =
@@ -33,96 +32,96 @@ type RecursoAfetado =
 type Resultado = 'sucesso' | 'falha'
 
 interface AuditoriaInput {
-    usuarioResponsavel?: string
-    perfil?: 'super_admin' | 'admin_estabelecimento' | 'socorrista' | 'publico'
-    estabelecimentoId?: string
-    tipoEvento: TipoEvento
-    recursoAfetado: RecursoAfetado
-    recursoId?: string
-    resultado: Resultado
-    origemRequisicao?: string
-    detalhes?: Record<string, unknown>
-}
+  usuarioResponsavel?: string
+  perfil: 'super_admin' | 'admin_estabelecimento' | 'socorrista' | 'publico' | 'sistema';
+  estabelecimentoId?: string
+  tipoEvento: TipoEvento
+  recursoAfetado: RecursoAfetado
+  recursoId?: string
+  resultado: Resultado
+  origemRequisicao?: string
+  detalhes?: Record<string, unknown>
+  }
 
 export const auditoriaService = {
-    async registrar(input: AuditoriaInput) {
-        try {
-            await prisma.auditoria.create({
-            data: {
-            dataHora: new Date(),
-            usuarioResponsavel: input.usuarioResponsavel,
-            perfil: input.perfil,
-            estabelecimentoId: input.estabelecimentoId,
-            tipoEvento: input.tipoEvento,
-            recursoAfetado: input.recursoAfetado,
-            recursoId: input.recursoId,
-            resultado: input.resultado,
-            origemRequisicao: input.origemRequisicao,
-            // detalhes: input.detalhes,
-            },
-        })
+  async registrar(input: AuditoriaInput) {
+    try {
+      await prisma.auditoria.create({
+        data: {
+        dataHora: new Date(),
+        usuarioResponsavel: input.usuarioResponsavel,
+        perfil: input.perfil,
+        estabelecimentoId: input.estabelecimentoId,
+        tipoEvento: input.tipoEvento,
+        recursoAfetado: input.recursoAfetado,
+        recursoId: input.recursoId,
+        resultado: input.resultado,
+        origemRequisicao: input.origemRequisicao,
+        // detalhes: input.detalhes,
+      },
+    })
     } catch (error) {
       console.error('Erro ao registrar auditoria:', error)
     }
   },
 
-    async consultar(params: {
-        periodoInicio: Date
-        periodoFim: Date
-        usuarioResponsavel?: string
-        perfil?: string
-        tipoEvento?: string[]
-        recursoAfetado?: string
-        resultado?: string
-        estabelecimentoId?: string
-        pagina?: number
-        limite?: number
+  async consultar(params: {
+    periodoInicio: Date
+    periodoFim: Date
+    usuarioResponsavel?: string
+    perfil?: string
+    tipoEvento?: string[]
+    recursoAfetado?: string
+    resultado?: string
+    estabelecimentoId?: string
+    pagina?: number
+    limite?: number
   }) {
-    const {
-        periodoInicio,
-        periodoFim,
-        usuarioResponsavel,
-        perfil,
-        tipoEvento,
-        recursoAfetado,
-        resultado,
-        estabelecimentoId,
-        pagina = 1,
-        limite = 20,
+  const {
+    periodoInicio,
+    periodoFim,
+    usuarioResponsavel,
+    perfil,
+    tipoEvento,
+    recursoAfetado,
+    resultado,
+    estabelecimentoId,
+    pagina = 1,
+    limite = 20,
     } = params
 
-    if (periodoFim <= periodoInicio) {
-      throw new Error('Data final deve ser posterior à inicial')
+  if (periodoFim <= periodoInicio) {
+    throw new Error('Data final deve ser posterior à inicial')
     }
 
-    const where: Record<string, unknown> = {
-      dataHora: {
-        gte: periodoInicio,
-        lte: periodoFim,
-      },
-    }
+  const where: Record<string, unknown> = {
+    dataHora: {
+      gte: periodoInicio,
+      lte: periodoFim,
+    },
+  }
 
-    if (usuarioResponsavel) where.usuarioResponsavel = usuarioResponsavel
-    if (perfil) where.perfil = perfil
-    if (recursoAfetado) where.recursoAfetado = recursoAfetado
-    if (resultado) where.resultado = resultado
-    if (estabelecimentoId) where.estabelecimentoId = estabelecimentoId
-    if (tipoEvento && tipoEvento.length > 0) {
-      where.tipoEvento = { in: tipoEvento }
-    }
+  if (usuarioResponsavel) where.usuarioResponsavel = usuarioResponsavel
+  if (perfil) where.perfil = perfil
+  if (recursoAfetado) where.recursoAfetado = recursoAfetado
+  if (resultado) where.resultado = resultado
+  if (estabelecimentoId) where.estabelecimentoId = estabelecimentoId
+  if (tipoEvento && tipoEvento.length > 0) {
+    where.tipoEvento = { in: tipoEvento }
+  }
 
-    const [registros, total] = await Promise.all([
-      prisma.auditoria.findMany({
-        where,
-        include: {
-          estabelecimento: {
-            select: { id: true, nome: true },
-          },
+  const [registros, total] = await Promise.all([
+    prisma.auditoria.findMany({
+      where,
+      include: {
+        estabelecimento: {
+          select: { id: true, nome: true },
         },
-        orderBy: { dataHora: 'desc' },
-        skip: (pagina - 1) * limite,
-        take: limite,
-      }),
+      },
+      orderBy: { dataHora: 'desc' },
+      skip: (pagina - 1) * limite,
+      take: limite,
+    }),
       prisma.auditoria.count({ where }),
     ])
 

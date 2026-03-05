@@ -110,5 +110,5 @@ export const barreiraIdSchema = z.object({
     id: z.cuid('ID inválido'),
 })
 
-export type CriarBarreiraInput = z.infer<typeof criarBarreiraSchema>
-export type AtualizarBarreiraInput = z.infer<typeof atualizarBarreiraSchema>
+export type CriarBarreira = z.infer<typeof criarBarreiraSchema>
+export type AtualizarBarreira = z.infer<typeof atualizarBarreiraSchema>

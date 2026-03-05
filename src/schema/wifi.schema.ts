@@ -51,5 +51,5 @@ export const wifiIdSchema = z.object({
     id: z.cuid('ID inválido'),
 })
 
-export type CriarWifiInput = z.infer<typeof criarWifiSchema>
-export type AtualizarWifiInput = z.infer<typeof atualizarWifiSchema>
+export type CriarWifi = z.infer<typeof criarWifiSchema>
+export type AtualizarWifi = z.infer<typeof atualizarWifiSchema>

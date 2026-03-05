@@ -18,4 +18,4 @@ export const consultarAuditoriaSchema = z.object({
     path: ['periodoFim'],
 })
 
-export type ConsultarAuditoriaInput = z.infer<typeof consultarAuditoriaSchema>
+export type ConsultarAuditoria = z.infer<typeof consultarAuditoriaSchema>

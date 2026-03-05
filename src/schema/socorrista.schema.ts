@@ -47,5 +47,5 @@ export const socorristaIdSchema = z.object({
     id: z.cuid('ID inválido'),
 })
 
-export type CriarSocorristaInput = z.infer<typeof criarSocorristaSchema>
-export type AtualizarSocorristaInput = z.infer<typeof atualizarSocorristaSchema>
+export type CriarSocorrista = z.infer<typeof criarSocorristaSchema>
+export type AtualizarSocorrista = z.infer<typeof atualizarSocorristaSchema>

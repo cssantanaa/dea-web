@@ -1,45 +1,45 @@
 import { prisma } from '@/lib/prisma'
-import { criarCliente, atualizarCliente } from '../schema/cliente.schema'
+import { CriarCliente, AtualizarCliente } from '../schema/cliente.schema'
 import { auditoriaService } from './auditoria.service'
 
 export const clienteService = {
-    async criar(data: criarCliente, usuarioId: string) {
-        const cnpjExistente = await prisma.cliente.findUnique({
-        where: { cnpj: data.cnpj },
+  async criar(data: CriarCliente, usuarioId: string) {
+    const cnpjExistente = await prisma.cliente.findUnique({
+      where: { cnpj: data.cnpj },
     });
 
     if (cnpjExistente) {
-        throw new Error('CNPJ já cadastrado')
+      throw new Error('CNPJ já cadastrado')
     }
 
     const cliente = await prisma.cliente.create({
-        data: {
-            nome: data.nome,
-            cnpj: data.cnpj,
-            email: data.email || null,
-            telefone: data.telefone || null,
-            status: 'ativo',
+      data: {
+        nome: data.nome,
+        cnpj: data.cnpj,
+        email: data.email || null,
+        telefone: data.telefone || null,
+        status: 'ativo',
         },
     })
 
     await auditoriaService.registrar({
-        usuarioResponsavel: usuarioId,
-        perfil: 'super_admin',
-        tipoEvento: 'criacao',
-        recursoAfetado: 'cliente',
-        recursoId: cliente.id,
-        resultado: 'sucesso',
+      usuarioResponsavel: usuarioId,
+      perfil: 'super_admin',
+      tipoEvento: 'criacao',
+      recursoAfetado: 'cliente',
+      recursoId: cliente.id,
+      resultado: 'sucesso',
     })
 
     return cliente
   },
 
     async listar(params: {
-        status?: string
-        busca?: string
-        pagina?: number
-        limite?: number
-  }) {
+      status?: string
+      busca?: string
+      pagina?: number
+      limite?: number
+    }) {
     const { status, busca, pagina = 1, limite = 10 } = params
 
     const where: Record<string, unknown> = {}
@@ -82,7 +82,7 @@ export const clienteService = {
     return cliente
   },
 
-  async atualizar(id: string, data: atualizarClienteSchema, usuarioId: string) {
+  async atualizar(id: string, data: AtualizarCliente, usuarioId: string) {
     const cliente = await prisma.cliente.findUnique({ where: { id } })
     if (!cliente) throw new Error('Cliente não encontrado')
 
@@ -109,44 +109,43 @@ export const clienteService = {
   },
 
     async alternarStatus(id: string, usuarioId: string) {
-        const cliente = await prisma.cliente.findUnique({ where: { id } })
-        if (!cliente) throw new Error('Cliente não encontrado')
+      const cliente = await prisma.cliente.findUnique({ where: { id } })
+      if (!cliente) throw new Error('Cliente não encontrado')
 
-        const novoStatus = cliente.status === 'ativo' ? 'inativo' : 'ativo'
-        const atualizado = await prisma.cliente.update({ where: { id }, data: { status: novoStatus } })
+      const novoStatus = cliente.status === 'ativo' ? 'inativo' : 'ativo'
+      const atualizado = await prisma.cliente.update({ where: { id }, data: { status: novoStatus } })
 
-        await auditoriaService.registrar({
-        usuarioResponsavel: usuarioId,
-        perfil: 'super_admin',
-        tipoEvento: novoStatus === 'ativo' ? 'ativacao' : 'inativacao',
-        recursoAfetado: 'cliente',
-        recursoId: id,
-        resultado: 'sucesso',
+      await auditoriaService.registrar({
+      usuarioResponsavel: usuarioId,
+      perfil: 'super_admin',
+      tipoEvento: novoStatus === 'ativo' ? 'ativacao' : 'inativacao',
+      recursoAfetado: 'cliente',
+      recursoId: id,
+      resultado: 'sucesso',
     })
 
     return atualizado
   },
 
     async excluir(id: string, usuarioId: string) {
-        const cliente = await prisma.cliente.findUnique({ where: { id } })
-        if (!cliente) throw new Error('Cliente não encontrado')
+      const cliente = await prisma.cliente.findUnique({ where: { id } })
+      if (!cliente) throw new Error('Cliente não encontrado')
 
-        const dependencias = await prisma.estabelecimento.count({ where: { clienteId: id } })
-        if (dependencias > 0) {
-          throw new Error('Cliente possui estabelecimentos vinculados')
-        }
+      const dependencias = await prisma.estabelecimento.count({ where: { clienteId: id } })
+      if (dependencias > 0) {
+        throw new Error('Cliente possui estabelecimentos vinculados')
+      }
 
-        await prisma.cliente.delete({ where: { id } })
+      await prisma.cliente.delete({ where: { id } })
 
-        await auditoriaService.registrar({
-            usuarioResponsavel: usuarioId,
-            perfil: 'super_admin',
-            tipoEvento: 'exclusao',
-            recursoAfetado: 'cliente',
-            recursoId: id,
-            resultado: 'sucesso',
+      await auditoriaService.registrar({
+          usuarioResponsavel: usuarioId,
+          perfil: 'super_admin',
+          tipoEvento: 'exclusao',
+          recursoAfetado: 'cliente',
+          recursoId: id,
+          resultado: 'sucesso',
         })
-
-    return { mensagem: 'Cliente excluído com sucesso' }
-  },
+        return { mensagem: 'Cliente excluído com sucesso' }
+    },
 }

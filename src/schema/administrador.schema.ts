@@ -81,5 +81,5 @@ export const administradorIdSchema = z.object({
     id: z.cuid('ID inválido'),
 })
 
-export type CriarAdministradorInput = z.infer<typeof criarAdministradorSchema>
-export type AtualizarAdministradorInput = z.infer<typeof atualizarAdministradorSchema>
+export type CriarAdministrador = z.infer<typeof criarAdministradorSchema>
+export type AtualizarAdministrador = z.infer<typeof atualizarAdministradorSchema>

@@ -71,5 +71,5 @@ export const criarEstabelecimentoSchema = z.object({
 export const atualizarEstabelecimentoSchema = criarEstabelecimentoSchema.partial()
 .omit({ clienteId: true })
 
-export type CriarEstabelecimentoInput = z.infer<typeof criarEstabelecimentoSchema>
-export type AtualizarEstabelecimentoInput = z.infer<typeof atualizarEstabelecimentoSchema>
+export type CriarEstabelecimento = z.infer<typeof criarEstabelecimentoSchema>
+export type AtualizarEstabelecimento = z.infer<typeof atualizarEstabelecimentoSchema>

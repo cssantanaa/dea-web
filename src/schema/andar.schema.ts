@@ -16,5 +16,5 @@ export const andarIdSchema = z.object({
     id: z.cuid('ID inválido'),
 })
 
-export type CriarAndarInput = z.infer<typeof criarAndarSchema>
-export type AtualizarAndarInput = z.infer<typeof atualizarAndarSchema>
+export type CriarAndar = z.infer<typeof criarAndarSchema>
+export type AtualizarAndar = z.infer<typeof atualizarAndarSchema>

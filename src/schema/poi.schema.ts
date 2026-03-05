@@ -73,5 +73,5 @@ export const poiIdSchema = z.object({
     id: z.cuid('ID inválido'),
 })
 
-export type CriarPOIInput = z.infer<typeof criarPOISchema>
-export type AtualizarPOIInput = z.infer<typeof atualizarPOISchema>
+export type CriarPOI = z.infer<typeof criarPOISchema>
+export type AtualizarPOI = z.infer<typeof atualizarPOISchema>
