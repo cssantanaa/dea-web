@@ -1,24 +1,209 @@
-datasource db {
-  provider = "postgresql"
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
-enum StatusEstabelecimento{
+datasource db {
+  provider = "postgresql"
+}
+
+model Estabelecimento {
+  id                     String                   @id @default(cuid())
+  nome                   String                   @db.VarChar(100)
+  clienteOrganizador     String                   @db.VarChar(80)
+  tipoOperacao           TipoOperacao
+  dataInicioEvento       DateTime?
+  dataFimEvento          DateTime?
+  cnpj                   String                   @db.VarChar(14)
+  categoria              CategoriaEstabelecimento
+  detalheCategoria       String?                  @db.VarChar(60)
+  rua                    String                   @db.VarChar(150)
+  numero                 String                   @db.VarChar(10)
+  complemento            String?                  @db.VarChar(60)
+  bairro                 String                   @db.VarChar(80)
+  cidade                 String                   @db.VarChar(80)
+  estado                 String                   @db.VarChar(2)
+  cep                    String                   @db.VarChar(8)
+  capacidadeEstimada     Int
+  statusConfiguracaoMapa StatusConfiguracaoMapa   @default(pendente)
+  status                 StatusEstabelecimento    @default(rascunho)
+  observacoesInternas    String?
+  criadoPor              String?                  @db.VarChar(36)
+  criadoEm               DateTime                 @default(now())
+  atualizadoPor          String?                  @db.VarChar(36)
+  atualizadoEm           DateTime                 @updatedAt
+  administradores        Administrador[]
+  barreiras              Barreira[]
+  codigosAcesso          CodigoAcesso[]
+  logsAuditoria          LogAuditoria[]
+  pois                   Poi[]
+  redesWifi              RedeWifi[]
+  socorristas            Socorrista[]
+
+  @@map("estabelecimentos")
+}
+
+model Administrador {
+  id                  String          @id @default(cuid())
+  estabelecimentoId   String
+  nome                String          @db.VarChar(80)
+  usuario             String          @db.VarChar(20)
+  hashSenha           String
+  telefoneSms         String?         @db.VarChar(13)
+  exigirTrocaSenha    Boolean         @default(true)
+  ativo               Boolean         @default(true)
+  permissoes          String[]
+  observacoesInternas String?         @db.VarChar(300)
+  criadoPor           String?         @db.VarChar(36)
+  criadoEm            DateTime        @default(now())
+  atualizadoPor       String?         @db.VarChar(36)
+  atualizadoEm        DateTime        @updatedAt
+  estabelecimento     Estabelecimento @relation(fields: [estabelecimentoId], references: [id])
+
+  @@unique([usuario, estabelecimentoId])
+  @@map("administradores")
+}
+
+model Poi {
+  id                  String          @id @default(cuid())
+  estabelecimentoId   String
+  tipo                TipoPoi
+  detalheTipo         String?         @db.VarChar(40)
+  nome                String          @db.VarChar(60)
+  andar               String          @db.VarChar(50)
+  posicao             Json
+  acessibilidade      Acessibilidade  @default(desconhecido)
+  disponibilidade     Disponibilidade @default(ativo)
+  visibilidade        Visibilidade    @default(publico)
+  capacidadeOuDetalhe String?         @db.VarChar(40)
+  orientacaoTextual   String?         @db.VarChar(120)
+  prioridadeRota      Int             @default(3)
+  criadoPor           String?         @db.VarChar(36)
+  criadoEm            DateTime        @default(now())
+  atualizadoPor       String?         @db.VarChar(36)
+  atualizadoEm        DateTime        @updatedAt
+  estabelecimento     Estabelecimento @relation(fields: [estabelecimentoId], references: [id])
+
+  @@unique([estabelecimentoId, tipo, nome, andar])
+  @@map("pois")
+}
+
+model Socorrista {
+  id                  String          @id @default(cuid())
+  estabelecimentoId   String
+  nome                String          @db.VarChar(80)
+  usuario             String          @db.VarChar(20)
+  hashSenha           String
+  telefoneSms         String?         @db.VarChar(13)
+  ativo               Boolean         @default(true)
+  observacoesInternas String?         @db.VarChar(300)
+  ultimoLoginApp      DateTime?
+  criadoPor           String?         @db.VarChar(36)
+  criadoEm            DateTime        @default(now())
+  atualizadoPor       String?         @db.VarChar(36)
+  atualizadoEm        DateTime        @updatedAt
+  estabelecimento     Estabelecimento @relation(fields: [estabelecimentoId], references: [id])
+
+  @@unique([usuario, estabelecimentoId])
+  @@map("socorristas")
+}
+
+model CodigoAcesso {
+  id                String          @id @default(cuid())
+  estabelecimentoId String
+  codigo            String          @db.VarChar(6)
+  modoGeracao       String          @default("automatico") @db.VarChar(10)
+  descricao         String?         @db.VarChar(60)
+  validoDe          DateTime?
+  validoAte         DateTime?
+  status            StatusCodigo    @default(ativo)
+  gerarQr           Boolean         @default(true)
+  imagemQr          String?
+  criadoPor         String?         @db.VarChar(36)
+  criadoEm          DateTime        @default(now())
+  atualizadoPor     String?         @db.VarChar(36)
+  atualizadoEm      DateTime        @updatedAt
+  estabelecimento   Estabelecimento @relation(fields: [estabelecimentoId], references: [id])
+
+  @@unique([estabelecimentoId, codigo])
+  @@map("codigo_acesso")
+}
+
+model RedeWifi {
+  id                 String          @id @default(cuid())
+  estabelecimentoId  String
+  nomeExibicao       String          @db.VarChar(60)
+  ssid               String          @db.VarChar(32)
+  possuiPortalCativo Boolean         @default(false)
+  instrucoesConexao  String?         @db.VarChar(120)
+  validoDe           DateTime?
+  validoAte          DateTime?
+  ativo              Boolean         @default(true)
+  criadoPor          String?         @db.VarChar(36)
+  criadoEm           DateTime        @default(now())
+  atualizadoPor      String?         @db.VarChar(36)
+  atualizadoEm       DateTime        @updatedAt
+  estabelecimento    Estabelecimento @relation(fields: [estabelecimentoId], references: [id])
+
+  @@map("redes_wifi")
+}
+
+model Barreira {
+  id                String             @id @default(cuid())
+  estabelecimentoId String
+  tipo              String             @db.VarChar(40)
+  detalheTipo       String?            @db.VarChar(40)
+  nome              String             @db.VarChar(60)
+  andar             String             @db.VarChar(50)
+  posicao           Json
+  severidade        SeveridadeBarreira @default(informativa)
+  visibilidade      Visibilidade       @default(publico)
+  inicioPeriodo     DateTime
+  fimPeriodo        DateTime?
+  status            StatusBarreira     @default(agendada)
+  mensagemCurta     String?            @db.VarChar(120)
+  ativadoEm         DateTime?
+  encerradoEm       DateTime?
+  criadoPor         String?            @db.VarChar(36)
+  criadoEm          DateTime           @default(now())
+  atualizadoPor     String?            @db.VarChar(36)
+  atualizadoEm      DateTime           @updatedAt
+  estabelecimento   Estabelecimento    @relation(fields: [estabelecimentoId], references: [id])
+
+  @@map("barreiras")
+}
+
+model LogAuditoria {
+  id                      String             @id @default(cuid())
+  registradoEm            DateTime           @default(now())
+  usuarioResponsavelId    String?            @db.VarChar(36)
+  papelUsuarioResponsavel String?            @db.VarChar(20)
+  estabelecimentoId       String?
+  tipoEvento              String             @db.VarChar(60)
+  recursoAfetado          String             @db.VarChar(60)
+  idRecursoAfetado        String?            @db.VarChar(36)
+  resultado               ResultadoAuditoria @default(sucesso)
+  origemRequisicao        String?            @db.VarChar(50)
+  metadados               Json?
+  estabelecimento         Estabelecimento?   @relation(fields: [estabelecimentoId], references: [id])
+
+  @@index([estabelecimentoId, registradoEm])
+  @@index([tipoEvento])
+  @@map("log_auditoria")
+}
+
+enum StatusEstabelecimento {
   rascunho
   ativo
   inativo
   encerrado
 }
 
-enum TipoOperacao{
+enum TipoOperacao {
   permanente
   evento
 }
 
-enum CategoriaEstabelecimento{
+enum CategoriaEstabelecimento {
   shopping
   faculdade
   hospital
@@ -29,13 +214,13 @@ enum CategoriaEstabelecimento{
   outros
 }
 
-enum StatusConfiguracaoMapa{
+enum StatusConfiguracaoMapa {
   pendente
   em_configuracao
   publicado
 }
 
-enum TipoPoi{
+enum TipoPoi {
   DEA
   extintor
   saida_emergencia
@@ -48,247 +233,43 @@ enum TipoPoi{
   outro
 }
 
-enum Disponibilidade{
+enum Disponibilidade {
   ativo
   inativo
   em_manutencao
 }
 
-enum Visibilidade{
+enum Visibilidade {
   publico
   somente_socorristas
 }
 
-enum Acessibilidade{
+enum Acessibilidade {
   acessivel
   nao_acessivel
   desconhecido
 }
 
-enum StatusCodigo{
+enum StatusCodigo {
   ativo
   revogado
   expirado
 }
 
-enum StatusBarreira{
+enum StatusBarreira {
   agendada
   ativa
   inativa
   encerrada
 }
 
-enum SeveridadeBarreira{
+enum SeveridadeBarreira {
   informativa
   atencao
   critico
 }
 
-enum ResultadoAuditoria{
+enum ResultadoAuditoria {
   sucesso
   falha
-}
-
-model Estabelecimento{
-  id String @id @default(cuid())
-  nome String @db.VarChar(100)
-  clienteOrganizador String @db.VarChar(80)
-  tipoOperacao TipoOperacao
-  dataInicioEvento DateTime?
-  dataFimEvento DateTime?
-  cnpj String @db.VarChar(14)
-  categoria CategoriaEstabelecimento
-  detalheCategoria String? @db.VarChar(60)
-
-  rua String @db.VarChar(150)
-  numero String @db.VarChar(10)
-  complemento String? @db.VarChar(60)
-  bairro String @db.VarChar(80)
-  cidade String @db.VarChar(80)
-  estado String @db.VarChar(2)
-  cep String @db.VarChar(8)
-
-  capacidadeEstimada Int
-  statusConfiguracaoMapa StatusConfiguracaoMapa @default(pendente)
-  status StatusEstabelecimento @default(rascunho)
-  observacoesInternas String? @db.Text
-
-  criadoPor String? @db.VarChar(36)
-  criadoEm DateTime @default(now())
-  atualizadoPor String? @db.VarChar(36)
-  atualizadoEm DateTime @updatedAt
-
-  administradores Administrador[]
-  pontos Poi[]
-  socorristas Socorrista[]
-  codigosAcesso CodigoAcesso[]
-  redesWifi RedeWifi[]
-  barreiras Barreira[]
-  logsAuditoria LogAuditoria[]
-
-  @@map("estabelecimentos")
-}
-
-model Administrador{
-  id String @id @default(cuid())
-  estabelecimentoId String
-  estabelecimento Estabelecimento @relation(fields:[estabelecimentoId],references:[id])
-
-  nome String @db.VarChar(80)
-  usuario String @db.VarChar(20)
-  hashSenha String
-  telefoneSms String? @db.VarChar(13)
-  exigirTrocaSenha Boolean @default(true)
-  ativo Boolean @default(true)
-  permissoes String[]
-  observacoesInternas String? @db.VarChar(300)
-
-  criadoPor String? @db.VarChar(36)
-  criadoEm DateTime @default(now())
-  atualizadoPor String? @db.VarChar(36)
-  atualizadoEm DateTime @updatedAt
-
-  @@unique([usuario,estabelecimentoId])
-  @@map("administradores")
-}
-
-model Poi{
-  id String @id @default(cuid())
-  estabelecimentoId String
-  estabelecimento Estabelecimento @relation(fields:[estabelecimentoId],references:[id])
-
-  tipo TipoPoi
-  detalheTipo String? @db.VarChar(40)
-  nome String @db.VarChar(60)
-  andar String @db.VarChar(50)
-  posicao Json
-  acessibilidade Acessibilidade @default(desconhecido)
-  disponibilidade Disponibilidade @default(ativo)
-  visibilidade Visibilidade @default(publico)
-  capacidadeOuDetalhe String? @db.VarChar(40)
-  orientacaoTextual String? @db.VarChar(120)
-  prioridadeRota Int @default(3)
-
-  criadoPor String? @db.VarChar(36)
-  criadoEm DateTime @default(now())
-  atualizadoPor String? @db.VarChar(36)
-  atualizadoEm DateTime @updatedAt
-
-  @@unique([estabelecimentoId,tipo,nome,andar])
-  @@map("pois")
-}
-
-model Socorrista{
-  id String @id @default(cuid())
-  estabelecimentoId String
-  estabelecimento Estabelecimento @relation(fields:[estabelecimentoId],references:[id])
-
-  nome String @db.VarChar(80)
-  usuario String @db.VarChar(20)
-  hashSenha String
-  telefoneSms String? @db.VarChar(13)
-  ativo Boolean @default(true)
-  observacoesInternas String? @db.VarChar(300)
-  ultimoLoginApp DateTime?
-
-  criadoPor String? @db.VarChar(36)
-  criadoEm DateTime @default(now())
-  atualizadoPor String? @db.VarChar(36)
-  atualizadoEm DateTime @updatedAt
-
-  @@unique([usuario,estabelecimentoId])
-  @@map("socorristas")
-}
-
-model CodigoAcesso{
-  id String @id @default(cuid())
-  estabelecimentoId String
-  estabelecimento Estabelecimento @relation(fields:[estabelecimentoId],references:[id])
-
-  codigo String @db.VarChar(6)
-  modoGeracao String @db.VarChar(10) @default("automatico")
-  descricao String? @db.VarChar(60)
-  validoDe DateTime?
-  validoAte DateTime?
-  status StatusCodigo @default(ativo)
-  gerarQr Boolean @default(true)
-  imagemQr String? @db.Text
-
-  criadoPor String? @db.VarChar(36)
-  criadoEm DateTime @default(now())
-  atualizadoPor String? @db.VarChar(36)
-  atualizadoEm DateTime @updatedAt
-
-  @@unique([estabelecimentoId,codigo])
-  @@map("codigo_acesso")
-}
-
-model RedeWifi{
-  id String @id @default(cuid())
-  estabelecimentoId String
-  estabelecimento Estabelecimento @relation(fields:[estabelecimentoId],references:[id])
-
-  nomeExibicao String @db.VarChar(60)
-  ssid String @db.VarChar(32)
-  possuiPortalCativo Boolean @default(false)
-  instrucoesConexao String? @db.VarChar(120)
-  validoDe DateTime?
-  validoAte DateTime?
-  ativo Boolean @default(true)
-
-  criadoPor String? @db.VarChar(36)
-  criadoEm DateTime @default(now())
-  atualizadoPor String? @db.VarChar(36)
-  atualizadoEm DateTime @updatedAt
-
-  @@map("redes_wifi")
-}
-
-model Barreira{
-  id String @id @default(cuid())
-  estabelecimentoId String
-  estabelecimento Estabelecimento @relation(fields:[estabelecimentoId],references:[id])
-
-  tipo String @db.VarChar(40)
-  detalheTipo String? @db.VarChar(40)
-  nome String @db.VarChar(60)
-  andar String @db.VarChar(50)
-  posicao Json
-  severidade SeveridadeBarreira @default(informativa)
-  visibilidade Visibilidade @default(publico)
-  inicioPeriodo DateTime
-  fimPeriodo DateTime?
-  status StatusBarreira @default(agendada)
-  mensagemCurta String? @db.VarChar(120)
-  ativadoEm DateTime?
-  encerradoEm DateTime?
-
-  criadoPor String? @db.VarChar(36)
-  criadoEm DateTime @default(now())
-  atualizadoPor String? @db.VarChar(36)
-  atualizadoEm DateTime @updatedAt
-
-  @@map("barreiras")
-}
-
-model LogAuditoria{
-  id String @id @default(cuid())
-  registradoEm DateTime @default(now())
-
-  usuarioResponsavelId String? @db.VarChar(36)
-  papelUsuarioResponsavel String? @db.VarChar(20)
-
-  estabelecimentoId String?
-  estabelecimento Estabelecimento? @relation(fields:[estabelecimentoId],references:[id])
-
-  tipoEvento String @db.VarChar(60)
-  recursoAfetado String @db.VarChar(60)
-  idRecursoAfetado String? @db.VarChar(36)
-  resultado ResultadoAuditoria @default(sucesso)
-  origemRequisicao String? @db.VarChar(50)
-  metadados Json?
-
-  @@index([estabelecimentoId,registradoEm])
-  @@index([tipoEvento])
-  @@map("log_auditoria")
 }
