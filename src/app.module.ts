@@ -9,7 +9,7 @@ import { PrismaModule } from 'prisma/prisma.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
-    // ThrottlerModule.forRoot({ ttl: 60, limit: 100 }),
+    ThrottlerModule.forRoot([{ ttl: 60, limit: 100 }]),
     PrismaModule,
   ]
 })
