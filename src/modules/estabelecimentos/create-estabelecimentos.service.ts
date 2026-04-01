@@ -28,7 +28,7 @@ export class EstabelecimentoService {
         //         tipoOperacao: dto.tipoOperacao,
         //         dataInicioEvento: dto.dataInicioEvento ? new Date(dto.dataInicioEvento) : null,
         //         dataFimEvento: dto.dataFimEvento ? new Date(dto.dataFimEvento) : null,
-        //         criadorPor: userId,
+        //         criador: userId,
         //     },
         // })
 
