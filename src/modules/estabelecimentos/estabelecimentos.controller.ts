@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from "@nestjs/common";
+import { Controller, Get, Patch, Query, UseGuards } from "@nestjs/common";
 import { EstabelecimentoService } from "./create-estabelecimentos.service";
 import { CreateEstabelecimentosDto } from "./dto/create-estabelecimentos.dto";
 import { Body, Post, Param } from "@nestjs/common";
@@ -18,13 +18,23 @@ export class EstabelecimentosController {
         return this.service.create(dto, userId);
     }
 
-    // @Get()
-    // findAll(@Query() filters: { status?: any; categoria?: string }) {
-    //     return this.service.findAll(filters);
-    // }
+    @Get()
+    findAll(@Query() filters: { status?: any; categoria?: string }) {
+        return this.service.findAll(filters);
+    }
 
-    // @Get(':id')
-    // findOne(@Param('id') id: string) {
-    //     return this.service.findOne(id);
-    // }
+    @Get(':id')
+    findOne(@Param('id') id: string) {
+        return this.service.findOne(id);
+    }
+
+    @Patch(':id')
+    update(@Param('id') id: string, @Body() dto: Partial<CreateEstabelecimentosDto>, @Usuario() user: any,) {
+        return this.service.update(id, dto, user.userId);
+    }
+
+    @Patch(':id/status')
+    setStatus(@Param('id') id: string, @Body('status') status: string, @Usuario() user: any) {
+        return this.service.setStatus(id, status, user.userId);
+    }
 }

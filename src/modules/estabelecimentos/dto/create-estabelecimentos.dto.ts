@@ -58,5 +58,4 @@ export class CreateEstabelecimentosDto {
 
     @IsOptional() @IsString() @Length(0, 500)
     observacoesInternas?: string;
-    
 }
