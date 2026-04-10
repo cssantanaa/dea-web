@@ -3,13 +3,13 @@ import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Length, Matches, Max
 
 export class CreateEstabelecimentosDto {
     @IsString() @Length(3, 100)
-    nome: string;
+    nome!: string;
 
     @IsString() @Length(1, 80)
-    clienteOrganizador: string;
+    clienteOrganizador!: string;
 
     @IsEnum(TipoOperacao)
-    tipoOperacao : TipoOperacao;
+    tipoOperacao! : TipoOperacao;
 
     @ValidateIf(o => o.tipoOperacao === 'evento')
     @IsDateString()
@@ -21,40 +21,40 @@ export class CreateEstabelecimentosDto {
 
     @IsString()
     @Matches(/^\d{14}$/, {message: 'Informe um CNPJ com 14 dígitos.'})
-    cnpj : string;
+    cnpj! : string;
 
     @IsEnum(CategoriaEstabelecimento)
-    categoriaEstabelecimento : CategoriaEstabelecimento;
+    categoriaEstabelecimento! : CategoriaEstabelecimento;
 
     @ValidateIf(o => o.categoria === 'outros')
     @IsString() @Length(3, 60)
     detalheCategoria?: string;
 
     @IsString() @Length(3, 150)
-    rua: string;
+    rua!: string;
 
     @IsString() @Length(1, 10)
-    numero: string;
+    numero!: string;
 
     @IsOptional() @IsString() @Length(0, 60)
-    complemento: string;
+    complemento!: string;
     
     @IsString() @Length(2, 80)
-    bairro: string;
+    bairro!: string;
 
     @IsString() @Length(2, 80)
-    cidade: string;
+    cidade!: string;
 
     @IsString() 
     @Matches(/^\d[A-Z]{2}$/, {message: 'UF deve ter 2 letras maiúsculas'})
-    estado: string;
+    estado!: string;
 
     @IsString() 
     @Matches(/^\d{8}$/, {message: 'Informe um CEP deve ter 8 dígitos.'})
-    cep: string;
+    cep!: string;
 
     @IsInt() @Min(1) @Max(999999999)
-    capacidadeEstimada: number;
+    capacidadeEstimada!: number;
 
     @IsOptional() @IsString() @Length(0, 500)
     observacoesInternas?: string;

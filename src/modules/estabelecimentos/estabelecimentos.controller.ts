@@ -1,11 +1,12 @@
 import { Controller, Get, Patch, Query, UseGuards } from "@nestjs/common";
-import { EstabelecimentoService } from "./create-estabelecimentos.service";
-import { CreateEstabelecimentosDto } from "./dto/create-estabelecimentos.dto";
+import { EstabelecimentoService } from "./estabelecimentos.service";
+import { CriarEstabelecimentosDto } from "./dto/estabelecimentos.dto";
 import { Body, Post, Param } from "@nestjs/common";
 import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
 import { TipoUsuarioGuard } from "src/auth/guards/tipo-usuario.guard";
 import { TipoUsuario } from "src/common/decorators/tipos.decorator";
 import { Usuario } from "src/common/decorators/usuario.decorator";
+import { StatusEstabelecimento } from "@prisma/client";
 
 @Controller('estabelecimentos')
 @UseGuards(JwtAuthGuard, TipoUsuarioGuard)
@@ -14,7 +15,7 @@ export class EstabelecimentosController {
     constructor( private service: EstabelecimentoService ) {}
 
     @Post()
-    create(@Body() dto: CreateEstabelecimentosDto, @Usuario() userId: any) {
+    create(@Body() dto: CriarEstabelecimentosDto, @Usuario() userId: any) {
         return this.service.create(dto, userId);
     }
 
@@ -29,12 +30,12 @@ export class EstabelecimentosController {
     }
 
     @Patch(':id')
-    update(@Param('id') id: string, @Body() dto: Partial<CreateEstabelecimentosDto>, @Usuario() user: any,) {
+    update(@Param('id') id: string, @Body() dto: Partial<CriarEstabelecimentosDto>, @Usuario() user: any,) {
         return this.service.update(id, dto, user.userId);
     }
 
     @Patch(':id/status')
-    setStatus(@Param('id') id: string, @Body('status') status: string, @Usuario() user: any) {
+    setStatus(@Param('id') id: string, @Body('status') status: any, @Usuario() user: any) {
         return this.service.setStatus(id, status, user.userId);
     }
 }
