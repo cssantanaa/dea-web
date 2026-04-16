@@ -3,7 +3,7 @@ import { Reflector } from "@nestjs/core";
 import { CHAVE_PERMISSAO } from "src/common/decorators/permissao.decorator";
 
 @Injectable()
-export class PermissioesGuard implements CanActivate {
+export class PermissionsGuard implements CanActivate {
     constructor(private reflector: Reflector) {}
 
     canActivate(context: ExecutionContext): boolean {

@@ -1,8 +1,7 @@
 import { Acessibilidade, Disponibilidade, TipoPoi, Visibilidade } from "@prisma/client";
 import { IsEnum, IsInt, IsObject, IsOptional, IsString, Length, Max, Min } from "class-validator";
 
-export class PoiDto {
-
+export class CriarPoiDto {
     @IsEnum(TipoPoi)
     tipo!: TipoPoi;
 

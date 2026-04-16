@@ -1,19 +1,17 @@
 import { PrismaService } from "prisma/prisma.service";
 import { CriarPoiDto } from "./dto/poi.dto";
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { TipoPoi } from "@prisma/client";
 
 @Injectable()
 export class PoisService {
   constructor(private prisma: PrismaService) {}
 
-  async create(dto: CriarPoiDto, estabelecimentoId: string, createdBy: string) {
+  async create(dto: CriarPoiDto, estabelecimentoId: string, criadoPor: string) {
     const existe = await this.prisma.poi.findUnique({
       where: {
         estabelecimentoId_tipo_nome_andar: {
-          estabelecimentoId,
-          tipo: dto.tipo,
-          nome: dto.nome,
-          andar: dto.andar,
+          estabelecimentoId, tipo: dto.tipo, nome: dto.nome, andar: dto.andar,
         },
       },
     });
@@ -54,11 +52,10 @@ export class PoisService {
     return this.prisma.poi.findMany({
       where: {
         estabelecimentoId,
-
         ...(filters.tipo && { tipo: filters.tipo }),
         ...(filters.andar && { andar: filters.andar }),
-        ...(filters.disponibilidade && { disponibilidade: filters.disponibilidade }),
-        ...(filters.visibilidade && { visibilidade: filters.visibilidade }),
+        ...(filters.disponibilidade && { disponibilidade: filters.disponibilidade as any }),
+        ...(filters.visibilidade && { visibilidade: filters.visibilidade as any }),
       },
       orderBy: { nome: 'asc' },
     });
@@ -81,15 +78,15 @@ export class PoisService {
   ) {
     await this.findOne(id, estabelecimentoId);
 
-    return this.prisma.poi.update({
-      where: {
-        id,
-      },
-      data: {
-        ...dto,
-        atualizadoPor,
-      },
-    });
+    // return this.prisma.poi.update({
+    //   where: {
+    //     id,
+    //   },
+    //   data: {
+    //     ...dto,
+    //     atualizadoPor,
+    //   },
+    // });
   }
 
   async remove(id: string, estabelecimentoId: string) {

@@ -1,7 +1,7 @@
 import { CategoriaEstabelecimento, TipoOperacao } from "@prisma/client";
 import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Length, Matches, Max, Min, ValidateIf } from "class-validator";
 
-export class CreateEstabelecimentosDto {
+export class CriarEstabelecimentosDto {
     @IsString() @Length(3, 100)
     nome!: string;
 
