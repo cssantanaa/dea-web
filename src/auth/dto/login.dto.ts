@@ -1,5 +1,4 @@
 import { IsString, Length, Matches } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
     @IsString() @Length(4, 20, { message: 'O usuário deve ter entre 4 e 20 caracteres.' }) @Matches(/^[a-zA-Z0-9._-]+$/, { message: 'Use somente letras, números, ponto, hífen e sublinhado.' }) @Matches(/^(?!.*@)/, { message: 'Use o nome de usuário fornecido pelo administrador. E-mail não é aceito.' })

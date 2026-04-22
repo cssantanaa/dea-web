@@ -1,13 +1,13 @@
 import { PrismaService } from "prisma/prisma.service";
-import { CriarPoiDto } from "./dto/poi.dto";
+import { PoiDto } from "./dto/poi.dto";
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { TipoPoi } from "@prisma/client";
+import { Poi, TipoPoi } from "@prisma/client";
 
 @Injectable()
 export class PoisService {
   constructor(private prisma: PrismaService) {}
 
-  async create(dto: CriarPoiDto, estabelecimentoId: string, criadoPor: string) {
+  async create(dto: PoiDto, estabelecimentoId: string, criadoPor: string) {
     const existe = await this.prisma.poi.findUnique({
       where: {
         estabelecimentoId_tipo_nome_andar: {
@@ -72,7 +72,7 @@ export class PoisService {
 
   async update(
     id: string,
-    dto: Partial<CriarPoiDto>,
+    dto: Partial<PoiDto>,
     estabelecimentoId: string,
     atualizadoPor: string,
   ) {

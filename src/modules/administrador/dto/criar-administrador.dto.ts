@@ -1,18 +1,21 @@
-import { ArrayMinSize, IsArray, IsOptional, IsString, Length, Matches } from "class-validator";
+import { ArrayMinSize, IsArray, IsIn, IsOptional, IsString, Length, Matches } from "class-validator";
 
 export const PERMISSAO_ADMINISTRADOR = [
-    'importar-mapas-e-configurar-geofence',
-    'gerenciar-pois',
-    'gerenciar-socorristas',
-    'configurar-numeros-internos',
-    'gerar-codigos-qr',
-    'configurar-redes-wifi',
-    'consultar-metricas',
-    'gerenciar-barreiras',
-    'consultar-historico'
+  'importar_mapas_e_configurar_geofence',
+  'gerenciar_pois',
+  'gerenciar_socorristas',
+  'configurar_numeros_internos',
+  'gerar_codigos_qr',
+  'configurar_redes_wifi',
+  'consultar_metricas',
+  'gerenciar_barreiras',
+  'consultar_historico',
 ] as const;
+ 
+export type PermissaoAdmin = typeof PERMISSAO_ADMINISTRADOR[number];
+ 
 
-export class AdministradorDto {
+export class CriarAdministradorDto {
     @IsString() @Length(36, 36)
     estabelecimentoId!: string;
 
@@ -28,8 +31,8 @@ export class AdministradorDto {
     @IsString() @Matches(/^\d{10,13}$/, {message: 'Informe um número de telefone válido.'})
     telefone!: string;
 
-    @IsArray() @ArrayMinSize(1)
-    permissoes!: (typeof PERMISSAO_ADMINISTRADOR)[number][];
+    @IsArray() @ArrayMinSize(1) @IsIn(PERMISSAO_ADMINISTRADOR, { each: true, message: 'Permissão inválida.' })
+    permissoes!: PermissaoAdmin[]
 
     @IsOptional() @IsString() @Length(0, 300)
     observacoes?: string;
