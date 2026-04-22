@@ -1,18 +1,51 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "prisma/prisma.service";
-import { CriarAdministradorDto } from "./dto/administrador.dto";
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { PrismaService } from 'prisma/prisma.service';
+import { CriarAdministradorDto } from './dto/criar-administrador.dto';
+import { AtualizarAdministradorDto } from './dto/atualizar-administrador.dto';
+import { FiltrarAdminDto } from './dto/filtrar-admin.dto';
+import { AlternarAtivoDto } from './dto/alternar-ativo.dto';
+
 
 function generateTempPassword(length = 12): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#';
   return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
+const selecao_segura = {
+  id: true,
+  name: true,
+  username: true,
+  smsPhone: true,
+  establishmentId: true,
+  isActive: true,
+  permissions: true,
+  requirePasswordChange: true,
+  internalNotes: true,
+  createdBy: true,
+  createdAt: true,
+  updatedBy: true,
+  updatedAt: true,
+};
+
 @Injectable()
 export class AdminsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+  ) {}
 
-  async create(dto: CriarAdministradorDto, criadoPor: string) {
+  async create(dto: CriarAdministradorDto, createdBy: string) {
+    // Valida se o estabelecimento existe
+    const estabelecimento = await this.prisma.estabelecimento.findUnique({
+      where: { id: dto.estabelecimentoId },
+    });
+    if (!estabelecimento) {
+      throw new BadRequestException('Estabelecimento inválido para gestão de administradores.');
+    }
+    if (estabelecimento.status === 'encerrado') {
+      throw new BadRequestException('Estabelecimento encerrado não pode ter novos administradores.');
+    }
+
     const existe = await this.prisma.administrador.findFirst({
       where: { usuario: dto.usuario, estabelecimentoId: dto.estabelecimentoId },
     });
@@ -20,77 +53,97 @@ export class AdminsService {
 
     const hashSenha = await bcrypt.hash(dto.senhaInicial, 12);
 
-    return this.prisma.administrador.create({
+    const admin = await this.prisma.administrador.create({
       data: {
-        ...dto,
-        hashSenha,
+        estabelecimentoId: dto.estabelecimentoId,
+        nome: dto.nome,
+        usuario: dto.usuario,
+        hashSenha: hashSenha,
+        telefoneSms: dto.telefone,
+        permissoes: dto.permissoes,
         exigirTrocaSenha: true,
         ativo: true,
-        criadoEm: new Date(),
+        observacoesInternas: dto.observacoes,
+        criadoPor: createdBy,
       },
-      // Nunca retornar o hash
-      select: {
-        id: true, nome: true, usuario: true, telefoneSms: true,
-        estabelecimentoId: true, ativo: true, permissoes: true,
-        exigirTrocaSenha: true, criadoEm: true,
-      },
+      select: selecao_segura,
     });
+
+    return admin;
   }
 
-  async findAll(estabelecimentoId: string) {
+  async findAll(estabelecimentoId: string, filtros: FiltrarAdminDto) {
     return this.prisma.administrador.findMany({
-      where: { estabelecimentoId },
-      orderBy: { criadoEm: 'desc' },
-      select: {
-        id: true, nome: true, usuario: true, telefoneSms: true,
-        ativo: true, permissoes: true, criadoEm: true, updatedAt: true,
+      where: {
+        estabelecimentoId: estabelecimentoId,
+        ...(filtros.ativo !== undefined && { ativo: filtros.ativo }),
+        ...(filtros.buscar && {
+          nome: { contains: filtros.buscar, mode: 'insensitive' },
+        }),
       },
+      orderBy: { criadoEm: 'desc' },
+      select: selecao_segura,
     });
   }
 
   async findOne(id: string) {
-    const administrador = await this.prisma.administrador.findUnique({ where: { id } });
-    if (!administrador) throw new NotFoundException('Administrador não localizado.');
-    return administrador;
-  }
-
-  async update(id: string, dto: Partial<CriarAdministradorDto>, updatedBy: string) {
-    const administrador = await this.findOne(id);
-    if (dto.usuario && dto.usuario !== administrador.usuario) {
-      throw new BadRequestException('O identificador de usuário não pode ser alterado após a criação.');
-    }
-    return this.prisma.administrador.update({
+    const admin = await this.prisma.administrador.findUnique({
       where: { id },
-      data: { ...dto, usuario: administrador.usuario, updatedBy },
-      select: {
-        id: true, nome: true, usuario: true, telefoneSms: true,
-        ativo: true, permissoes: true, updatedAt: true,
-      },
+      select: selecao_segura,
     });
+    if (!admin) throw new NotFoundException('Administrador não localizado.');
+    return admin;
   }
 
-  async novaSenha(id: string, requestedBy: string) {
-    await this.findOne(id);
+  async update(id: string, dto: AtualizarAdministradorDto, updatedBy: string) {
+    const admin = await this.prisma.administrador.findUnique({ where: { id } });
+    if (!admin) throw new NotFoundException('Administrador não localizado.');
+
+    const updated = await this.prisma.administrador.update({
+      where: { id },
+      data: { ...dto, updatedBy },
+      select: selecao_segura,
+    });
+
+    return updated;
+  }
+
+  async remove(id: string, deletedBy: string) {
+    const admin = await this.prisma.administrador.findUnique({ where: { id } });
+    if (!admin) throw new NotFoundException('Administrador não localizado.');
+
+    await this.prisma.administrador.delete({ where: { id } });
+
+    return { message: 'Administrador excluído com sucesso.' };
+  }
+
+  async resetPassword(id: string, requestedBy: string) {
+    const admin = await this.prisma.administrador.findUnique({ where: { id } });
+    if (!admin) throw new NotFoundException('Administrador não localizado.');
+
     const tempPassword = generateTempPassword();
-    const hashSenha = await bcrypt.hash(tempPassword, 12);
+    const passwordHash = await bcrypt.hash(tempPassword, 12);
+
     await this.prisma.administrador.update({
       where: { id },
-      data: { hashSenha, exigirTrocaSenha: true, updatedBy: requestedBy },
+      data: { hashSenha: passwordHash, exigirTrocaSenha: true, updatedBy: requestedBy },
     });
-    return { tempPassword }; // exibido uma única vez
+
+
+    // tempPassword exibido uma única vez — não armazenar em log
+    return { tempPassword };
   }
 
-  async setStatus(id: string, ativo: boolean, updatedBy: string) {
-    await this.findOne(id);
-    return this.prisma.administrador.update({
+  async toggleActive(id: string, isActive: boolean, updatedBy: string) {
+    const admin = await this.prisma.administrador.findUnique({ where: { id } });
+    if (!admin) throw new NotFoundException('Administrador não localizado.');
+
+    const updated = await this.prisma.administrador.update({
       where: { id },
-      data: { ativo, updatedBy },
-      select: { id: true, ativo: true },
+      data: { ativo: isActive, updatedBy },
+      select: { id: true, ativo: true, usuario: true },
     });
-  }
 
-  async remove(id: string) {
-    await this.findOne(id);
-    return this.prisma.administrador.delete({ where: { id } });
+    return updated;
   }
 }

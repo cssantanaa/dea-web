@@ -1,8 +1,8 @@
 import { CategoriaEstabelecimento, TipoOperacao } from "@prisma/client";
 import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Length, Matches, Max, Min, ValidateIf } from "class-validator";
 
-export class CriarEstabelecimentosDto {
-    @IsString() @Length(3, 100)
+export class CriarEstabelecimentoDto {
+    @IsString() @Length(3, 100, { message: 'Nome deve ter entre 3 e 100 caracteres.' }) @Matches(/^[a-zA-ZÀ-ÿ0-9 .,\-\/&]+$/, { message: 'Caracteres não permitidos no nome.' })
     nome!: string;
 
     @IsString() @Length(1, 80)
@@ -11,23 +11,19 @@ export class CriarEstabelecimentosDto {
     @IsEnum(TipoOperacao)
     tipoOperacao! : TipoOperacao;
 
-    @ValidateIf(o => o.tipoOperacao === 'evento')
-    @IsDateString()
+    @ValidateIf(o => o.tipoOperacao === 'evento') @IsDateString({}, { message: 'Informe uma data de início válida.' })
     dataInicioEvento?: string;
 
-    @ValidateIf(o => o.tipoOperacao === 'evento')
-    @IsDateString()
+    @ValidateIf(o => o.tipoOperacao === 'evento')  @IsDateString({}, { message: 'Informe uma data de fim válida.' })
     dataFimEvento?: string;
 
-    @IsString()
-    @Matches(/^\d{14}$/, {message: 'Informe um CNPJ com 14 dígitos.'})
+    @IsString() @Matches(/^\d{14}$/, {message: 'Informe um CNPJ com 14 dígitos.'})
     cnpj! : string;
 
     @IsEnum(CategoriaEstabelecimento)
     categoriaEstabelecimento! : CategoriaEstabelecimento;
 
-    @ValidateIf(o => o.categoria === 'outros')
-    @IsString() @Length(3, 60)
+    @ValidateIf(o => o.categoria === 'outros') @IsString() @Length(3, 60)
     detalheCategoria?: string;
 
     @IsString() @Length(3, 150)
@@ -45,12 +41,10 @@ export class CriarEstabelecimentosDto {
     @IsString() @Length(2, 80)
     cidade!: string;
 
-    @IsString() 
-    @Matches(/^\d[A-Z]{2}$/, {message: 'UF deve ter 2 letras maiúsculas'})
+    @IsString() @Matches(/^\d[A-Z]{2}$/, {message: 'UF deve ter 2 letras maiúsculas'})
     estado!: string;
 
-    @IsString() 
-    @Matches(/^\d{8}$/, {message: 'Informe um CEP deve ter 8 dígitos.'})
+    @IsString() @Matches(/^\d{8}$/, {message: 'Informe um CEP deve ter 8 dígitos.'})
     cep!: string;
 
     @IsInt() @Min(1) @Max(999999999)

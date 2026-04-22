@@ -12,7 +12,7 @@ export const PERMISSAO_ADMINISTRADOR = [
     'consultar-historico'
 ] as const;
 
-export class CriarAdministradorDto {
+export class AdministradorDto {
     @IsString() @Length(36, 36)
     estabelecimentoId!: string;
 

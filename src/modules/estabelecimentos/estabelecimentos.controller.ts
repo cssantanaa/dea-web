@@ -1,41 +1,51 @@
-import { Controller, Get, Patch, Query, UseGuards } from "@nestjs/common";
-import { EstabelecimentoService } from "./estabelecimentos.service";
-import { CriarEstabelecimentosDto } from "./dto/estabelecimentos.dto";
-import { Body, Post, Param } from "@nestjs/common";
-import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
-import { TipoUsuarioGuard } from "src/auth/guards/tipo-usuario.guard";
-import { TipoUsuario } from "src/common/decorators/tipos.decorator";
-import { Usuario } from "src/common/decorators/usuario.decorator";
-import { StatusEstabelecimento } from "@prisma/client";
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, HttpCode } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { Usuario } from 'src/common/decorators/usuario.decorator';
+import { TipoUsuario } from 'src/common/decorators/tipos.decorator';
+import { EstabelecimentoService } from './estabelecimentos.service';
+import { CriarEstabelecimentoDto } from './dto/criar-estabelecimentos.dto';
+import { AtualizarEstabelecimentoDto } from './dto/atualizar-estabelecimento.dto';
+import { FiltrarEstabelecimentoDto } from './dto/filtrar-estabelecimento.dto';
+import { StatusEstabelecimento } from '@prisma/client';
 
-@Controller('estabelecimentos')
-@UseGuards(JwtAuthGuard, TipoUsuarioGuard)
+
+@UseGuards(JwtAuthGuard, TipoUsuario(['super_admin']))
 @TipoUsuario(['super_admin'])
+@Controller('estabelecimentos')
 export class EstabelecimentosController {
-    constructor( private service: EstabelecimentoService ) {}
+  constructor(private service: EstabelecimentoService) {}
 
-    @Post()
-    create(@Body() dto: CriarEstabelecimentosDto, @Usuario() userId: any) {
-        return this.service.create(dto, userId);
-    }
+  @Post()
+  create(@Body() dto: CriarEstabelecimentoDto, @Usuario() user: any) {
+    return this.service.create(dto, user.userId);
+  }
 
-    @Get()
-    findAll(@Query() filters: { status?: any; categoria?: string }) {
-        return this.service.findAll(filters);
-    }
+  @Get()
+  findAll(@Query() filters: FiltrarEstabelecimentoDto) {
+    return this.service.findAll(filters);
+  }
 
-    @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.service.findOne(id);
-    }
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.service.findOne(id);
+  }
 
-    @Patch(':id')
-    update(@Param('id') id: string, @Body() dto: Partial<CriarEstabelecimentosDto>, @Usuario() user: any,) {
-        return this.service.update(id, dto, user.userId);
-    }
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() dto: AtualizarEstabelecimentoDto,
+    @Usuario() user: any,
+  ) {
+    return this.service.update(id, dto, user.userId);
+  }
 
-    @Patch(':id/status')
-    setStatus(@Param('id') id: string, @Body('status') status: any, @Usuario() user: any) {
-        return this.service.setStatus(id, status, user.userId);
-    }
+  @Patch(':id/status')
+  @HttpCode(200)
+  setStatus(
+    @Param('id') id: string,
+    @Body() dto: StatusEstabelecimento,
+    @Usuario() user: any,
+  ) {
+    return this.service.setStatus(id, dto, user.userId);
+  }
 }

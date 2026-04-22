@@ -1,21 +1,19 @@
-import { IsBoolean, IsEnum, IsOptional, IsString, Length, Matches } from "class-validator";
+import { IsOptional, IsString, Length, Matches } from "class-validator";
 
-export class CriarSocorristaDto {
-    @IsString() @Length(3, 80)
-    nome!: string;
+export class SocorristaDto {
 
-    @IsString() @Length(4, 20) @Matches(/^[a-zA-Z0-9_ ]+$/, {message: 'O nome deve conter apenas letras, números, underscores e espaços.'}) @Matches(/^(?!.*@)/, {message: 'Não pode conter espaços consecutivos.'})
-    usuario!: string;
+  @IsString() @Length(3, 80)
+  nome!: string;
 
-    @IsString() @Matches(/^\d{10,13}$/, {message: 'Informe um número de telefone válido.'})
-    telefone!: string;
+  @IsString() @Length(4, 20) @Matches(/^[a-zA-Z0-9._-]+$/) @Matches(/^(?!.*@)/)
+  usuario!: string;
 
-    @IsEnum(['ativo', 'inativo']) 
-    status!: string;
+  @IsString() @Length(8, 64)
+  senha!: string;
 
-    @IsOptional() @IsString() @Length(0, 300)
-    observacoes?: string;
+  @IsOptional() @Matches(/^\d{10,13}$/)
+  telefoneSms?: string;
 
-    @IsBoolean()
-    ativo?: boolean;
+  @IsOptional() @IsString() @Length(0, 300)
+  observacoes?: string;
 }

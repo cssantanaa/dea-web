@@ -1,16 +1,18 @@
-import { Injectable, NotFoundException, BadRequestException, } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
-import { CriarEstabelecimentosDto } from './dto/estabelecimentos.dto';
-import { CategoriaEstabelecimento, StatusEstabelecimento } from '@prisma/client';
+import { CriarEstabelecimentoDto } from './dto/criar-estabelecimentos.dto';
+import { AtualizarEstabelecimentoDto } from './dto/atualizar-estabelecimento.dto';
+import { FiltrarEstabelecimentoDto } from './dto/filtrar-estabelecimento.dto';
+import { StatusEstabelecimento } from '@prisma/client';
+
 
 @Injectable()
 export class EstabelecimentoService {
   constructor(
     private prisma: PrismaService,
-    // private audit: AuditService,
   ) {}
 
-  async create(dto: CriarEstabelecimentosDto, userId: string) {
+  async create(dto: CriarEstabelecimentoDto, userId: string) {
     if (dto.tipoOperacao === 'evento') {
       if (!dto.dataInicioEvento || !dto.dataFimEvento) {
         throw new BadRequestException('Informe início e fim do evento.');
@@ -23,52 +25,73 @@ export class EstabelecimentoService {
     const estabelecimento = await this.prisma.estabelecimento.create({
       data: {
         ...dto,
+        categoria: dto.categoriaEstabelecimento,
         dataInicioEvento: dto.dataInicioEvento ? new Date(dto.dataInicioEvento) : null,
         dataFimEvento: dto.dataFimEvento ? new Date(dto.dataFimEvento) : null,
         criadoPor: userId,
-        categoria: dto.categoriaEstabelecimento as CategoriaEstabelecimento,
-      },
+        status: 'rascunho',
+      }
     });
-
-    // await this.audit.log({
-    //   usuarioResponsavelId: userId,
-    //   papelUsuarioResponsavel: 'super_admin',
-    //   idEstabelecimento: estabelecimento.id,
-    //   tipoEvento: 'establishment.created',
-    //   recursoAfetado: 'establishment',
-    //   idRecursoAfetado: estabelecimento.id,
-    // });
 
     return estabelecimento;
   }
 
-  async findAll(filters: { status?: StatusEstabelecimento; categoria?: string }) {
+  async findAll(filtros: FiltrarEstabelecimentoDto) {
     return this.prisma.estabelecimento.findMany({
       where: {
-        ...(filters.status && { status: filters.status }),
-        ...(filters.categoria && { categoria: filters.categoria as any }),
+        ...(filtros.status && { status: filtros.status }),
+        ...(filtros.categoria && { categoria: filtros.categoria }),
+        ...(filtros.buscar && {
+          nome: { contains: filtros.buscar, mode: 'insensitive' },
+        }),
       },
       orderBy: { criadoEm: 'desc' },
+      select: {
+        id: true,
+        nome: true,
+        clienteOrganizador: true,
+        tipoOperacao: true,
+        categoria: true,
+        status: true,
+        statusConfiguracaoMapa: true,
+        cidade: true,
+        estado: true,
+        dataInicioEvento: true,
+        dataFimEvento: true,
+        criadoEm: true,
+      },
     });
   }
 
   async findOne(id: string) {
-    const e = await this.prisma.estabelecimento.findUnique({ where: { id } });
-    if (!e) throw new NotFoundException('Estabelecimento não encontrado.');
-    return e;
+    const estabelecimento = await this.prisma.estabelecimento.findUnique({ where: { id } });
+    if (!estabelecimento) throw new NotFoundException('Estabelecimento não encontrado.');
+    return estabelecimento;
   }
 
-  async update(id: string, dto: Partial<CriarEstabelecimentosDto>, userId: string) {
-    await this.findOne(id); // garante existência
-    return this.prisma.estabelecimento.update({
+  async update(id: string, dto: AtualizarEstabelecimentoDto, userId: string) {
+    const estabelecimento = await this.findOne(id);
+
+    if (estabelecimento.status === 'encerrado') {
+      throw new ForbiddenException('Estabelecimentos encerrados não podem ser editados.');
+    }
+
+    if (dto.dataInicioEvento && dto.dataFimEvento) {
+      if (new Date(dto.dataFimEvento) <= new Date(dto.dataInicioEvento)) {
+        throw new BadRequestException('A data final deve ser posterior à data inicial.');
+      }
+    }
+
+    const atualizado = await this.prisma.estabelecimento.update({
       where: { id },
       data: {
         ...dto,
-        dataInicioEvento: dto.dataInicioEvento ? new Date(dto.dataInicioEvento) : undefined,
-        dataFimEvento: dto.dataFimEvento ? new Date(dto.dataFimEvento) : undefined,
+        dataInicioEvento: dto.dataInicioEvento ? new Date(dto.dataInicioEvento) : null,
+        dataFimEvento: dto.dataFimEvento ? new Date(dto.dataFimEvento) : null,
         atualizadoPor: userId,
       },
     });
+    return atualizado;
   }
 
   async setStatus(id: string, status: StatusEstabelecimento, userId: string) {
@@ -76,25 +99,18 @@ export class EstabelecimentoService {
     const atualizado = await this.prisma.estabelecimento.update({
       where: { id },
       data: { status, atualizadoPor: userId },
+      select: { id: true, nome: true, status: true },
     });
-    // await this.audit.log({
-    //   usuarioResponsavelId: userId,
-    //   papelUsuarioResponsavel: 'super_admin',
-    //   idEstabelecimento: id,
-    //   tipoEvento: `establishment.status_changed.${status}`,
-    //   recursoAfetado: 'establishment',
-    //   idRecursoAfetado: id,
-    // });
+
     return atualizado;
   }
 
-//   Chamado pelo scheduler CRON
-  async closeExpiredEvents() {
+  async FecharEstabelecimentoExpirados() {
     return this.prisma.estabelecimento.updateMany({
       where: {
         tipoOperacao: 'evento',
         dataFimEvento: { lt: new Date() },
-        status: { not: 'encerrado' },
+        status: { notIn: ['encerrado', 'inativo'] },
       },
       data: { status: 'encerrado' },
     });
