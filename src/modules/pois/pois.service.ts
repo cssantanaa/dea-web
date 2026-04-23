@@ -1,5 +1,5 @@
 import { PrismaService } from "prisma/prisma.service";
-import { PoiDto } from "./dto/poi.dto";
+import { PoiDto } from "./dto/criar-poi.dto";
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { Poi, TipoPoi } from "@prisma/client";
 

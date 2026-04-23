@@ -1,6 +1,6 @@
 import { Controller, Post, Param, Body, UseGuards, Get, Query, Patch, Delete} from "@nestjs/common";
 import { PoisService } from "./pois.service";
-import { CriarPoiDto } from "./dto/poi.dto";
+import { PoiDto } from "./dto/criar-poi.dto";
 import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
 import { PermissionsGuard } from "src/auth/guards/permissions.guard";
 import { Permissao } from "src/common/decorators/permissao.decorator";
@@ -13,7 +13,7 @@ export class PoisController {
 
     @Post()
     @Permissao('gerenciar_pois')
-    create(@Param('estabelecimentoId') estabelecimentoId: string, @Body() dto: CriarPoiDto, @Usuario() user: any) {
+    create(@Param('estabelecimentoId') estabelecimentoId: string, @Body() dto: PoiDto, @Usuario() user: any) {
         return this.service.create(dto, estabelecimentoId, user.userId);
     }
 
@@ -29,7 +29,7 @@ export class PoisController {
     
     @Patch(':id')
     @Permissao('gerenciar_pois')
-    update(@Param('estabelecimentoId') estabelecimentoId: string, @Param('id') id: string, @Body() dto: Partial<CriarPoiDto>, @Usuario() user: any) {
+    update(@Param('estabelecimentoId') estabelecimentoId: string, @Param('id') id: string, @Body() dto: Partial<PoiDto>, @Usuario() user: any) {
         return this.service.update(id, dto, estabelecimentoId, user.userId);
     }
 
