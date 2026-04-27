@@ -16,8 +16,8 @@ export class AdminsController {
   constructor(private service: AdminsService) {}
 
   @Post()
-  create(@Body() dto: CriarAdministradorDto, @Usuario() user: any) {
-    return this.service.create(dto, user.userId);
+  criar(@Body() dto: CriarAdministradorDto, @Usuario() user: any) {
+    return this.service.criar(dto, user.userId);
   }
 
   @Get()
@@ -34,33 +34,33 @@ export class AdminsController {
   }
 
   @Patch(':id')
-  update(
+  atualizar(
     @Param('id') id: string,
     @Body() dto: AtualizarAdministradorDto,
     @Usuario() user: any,
   ) {
-    return this.service.update(id, dto, user.userId);
+    return this.service.atualizar(id, dto, user.userId);
   }
 
   @Delete(':id')
   @HttpCode(200)
-  remove(@Param('id') id: string, @Usuario() user: any) {
-    return this.service.remove(id, user.userId);
+  remover(@Param('id') id: string, @Usuario() user: any) {
+    return this.service.remover(id, user.userId);
   }
 
-  @Post(':id/reset-password')
+  @Post(':id/resetar-senha')
   @HttpCode(200)
   resetPassword(@Param('id') id: string, @Usuario() user: any) {
-    return this.service.resetPassword(id, user.userId);
+    return this.service.resetarSenha(id, user.userId);
   }
 
-  @Patch(':id/toggle-active')
+  @Patch(':id/alternar-ativo')
   @HttpCode(200)
-  toggleActive(
+  alternarAtivo(
     @Param('id') id: string,
     @Body() dto: AlternarAtivoDto,
     @Usuario() user: any,
   ) {
-    return this.service.toggleActive(id, dto.ativo, user.userId);
+    return this.service.alternarAtivo(id, dto.ativo, user.userId);
   }
 }

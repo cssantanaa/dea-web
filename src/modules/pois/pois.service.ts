@@ -1,99 +1,116 @@
-import { PrismaService } from "prisma/prisma.service";
-import { PoiDto } from "./dto/criar-poi.dto";
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { Poi, TipoPoi } from "@prisma/client";
+import { Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { PrismaService } from 'prisma/prisma.service';
+import { CriarPoiDto } from './dto/criar-poi.dto';
+import { AtualizarPoiDto, filtrarPoiDto } from './dto/atualizar-poi.dto';
+// import audit service when available
 
 @Injectable()
 export class PoisService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    // private audit: AuditService,
+  ) {}
 
-  async create(dto: PoiDto, estabelecimentoId: string, criadoPor: string) {
-    const existe = await this.prisma.poi.findUnique({
-      where: {
-        estabelecimentoId_tipo_nome_andar: {
-          estabelecimentoId, tipo: dto.tipo, nome: dto.nome, andar: dto.andar,
-        },
-      },
+  private async AcessoEstabelecimento(estabelecimentoId: string) {
+    const est = await this.prisma.estabelecimento.findUnique({
+      where: { id: estabelecimentoId },
     });
-
-    if (existe) { throw new ConflictException('Já existe um POI com este nome neste andar.'); }
-
-    if (!dto.posicao || typeof dto.posicao !== 'object') {
-      throw new BadRequestException('Posição inválida.');
+    if (!est) throw new NotFoundException('Estabelecimento não encontrado.');
+    if (est.status === 'encerrado') {
+      throw new ForbiddenException('Estabelecimento encerrado não permite alterações.');
     }
-
-    return this.prisma.poi.create({
-      data: {
-        tipo: dto.tipo,
-        detalheTipo: dto.detalheTipo,
-        nome: dto.nome,
-        andar: dto.andar,
-        posicao: dto.posicao as any,
-        acessibilidade: dto.acessibilidade,
-        disponibilidade: dto.disponibilidade,
-        visibilidade: dto.visibilidade,
-        capacidadeOuDetalhes: dto.capacidadeOuDetalhes,
-        prioridadeRota: dto.prioridadeRota,
-        estabelecimentoId,
-        criadoPor,
-      },
-    });
+    return est;
   }
 
-  async findAll(
-    estabelecimentoId: string,
-    filters: {
-      tipo?: TipoPoi;
-      andar?: string;
-      disponibilidade?: string;
-      visibilidade?: string;
-    },
-  ) {
+  async criar(dto: CriarPoiDto, estabelecimentoId: string, createdBy: string) {
+    await this.AcessoEstabelecimento(estabelecimentoId);
+
+    const existe = await this.prisma.poi.findFirst({
+      where: {
+        estabelecimentoId: estabelecimentoId,
+        tipo: dto.tipo,
+        nome: dto.nome,
+        andar: dto.andar,
+      },
+    });
+    if (existe) {
+      throw new ConflictException('Já existe um POI com este nome neste andar.');
+    }
+
+    if (!dto.posicao || typeof dto.posicao !== 'object') {
+      throw new BadRequestException('Posição inválida para este andar.');
+    }
+
+    const poi = await this.prisma.poi.create({
+      data: { ...dto, estabelecimentoId, criadoPor: createdBy },
+    });
+
+    return poi;
+  }
+
+  async findAll(estabelecimentoId: string, filtros: filtrarPoiDto) {
     return this.prisma.poi.findMany({
       where: {
         estabelecimentoId,
-        ...(filters.tipo && { tipo: filters.tipo }),
-        ...(filters.andar && { andar: filters.andar }),
-        ...(filters.disponibilidade && { disponibilidade: filters.disponibilidade as any }),
-        ...(filters.visibilidade && { visibilidade: filters.visibilidade as any }),
+        ...(filtros.tipo && { tipo: filtros.tipo }),
+        ...(filtros.andar && { andar: filtros.andar }),
+        ...(filtros.disponibilidade && { disponibilidade: filtros.disponibilidade }),
+        ...(filtros.visibilidade && { visibilidade: filtros.visibilidade }),
       },
-      orderBy: { nome: 'asc' },
+      orderBy: [{ andar: 'asc' }, { nome: 'asc' }],
     });
   }
 
   async findOne(id: string, estabelecimentoId: string) {
-    const poi = await this.prisma.poi.findFirst({
-      where: { id, estabelecimentoId },
-    });
-
+    const poi = await this.prisma.poi.findFirst({ where: { id, estabelecimentoId } });
     if (!poi) throw new NotFoundException('POI não encontrado.');
     return poi;
   }
 
-  async update(
-    id: string,
-    dto: Partial<PoiDto>,
-    estabelecimentoId: string,
-    atualizadoPor: string,
-  ) {
-    await this.findOne(id, estabelecimentoId);
+  async atualizar(id: string, dto: AtualizarPoiDto, estabelecimentoId: string, updatedBy: string) {
+    const poi = await this.findOne(id, estabelecimentoId);
 
-    // return this.prisma.poi.update({
-    //   where: {
-    //     id,
-    //   },
-    //   data: {
-    //     ...dto,
-    //     atualizadoPor,
-    //   },
-    // });
+    // Verifica duplicidade de nome se nome ou andar foram alterados
+      const novoNome = dto.nome ?? poi.nome;
+      const novoAndar = dto.andar ?? poi.andar;
+      const novoTipo = dto.tipo ?? poi.tipo;
+
+      const duplicado = await this.prisma.poi.findFirst({
+        where: {
+          estabelecimentoId,
+          tipo: novoTipo,
+          nome: novoNome,
+          andar: novoAndar,
+          id: { not: id },
+        },
+      });
+      if (duplicado) throw new ConflictException('Já existe um POI com este nome neste andar.');
+    
+
+      const atualizado = await this.prisma.poi.update({
+        where: { id },
+        data: { ...dto, atualizadoPor: updatedBy },
+      });
+      return atualizado;
   }
 
-  async remove(id: string, estabelecimentoId: string) {
+  async remover(id: string, estabelecimentoId: string, deletadoPor: string) {
     await this.findOne(id, estabelecimentoId);
 
-    return this.prisma.poi.delete({
-      where: { id },
-    });
+  //   // RF021: POI com histórico recente não pode ser excluído — apenas inativado.
+  //   // Descomente quando a tabela de ocorrências estiver disponível:
+  //   // const recentUsage = await this.prisma.occurrenceDestination.count({
+  //   //   where: { poiId: id, createdAt: { gte: subDays(new Date(), 30) } },
+  //   // });
+  //   // if (recentUsage > 0) {
+  //   //   throw new BadRequestException(
+  //   //     'Este POI possui histórico recente e não pode ser excluído. Inative-o.',
+  //   //   );
+  //   // }
+
+  //   await this.prisma.poi.delete({ where: { id } });
+
+  //   return { message: 'POI excluído com sucesso.' };
+  // }
   }
 }

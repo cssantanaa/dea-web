@@ -34,7 +34,7 @@ export class AdminsService {
     private prisma: PrismaService,
   ) {}
 
-  async create(dto: CriarAdministradorDto, createdBy: string) {
+  async criar(dto: CriarAdministradorDto, createdBy: string) {
     // Valida se o estabelecimento existe
     const estabelecimento = await this.prisma.estabelecimento.findUnique({
       where: { id: dto.estabelecimentoId },
@@ -95,7 +95,7 @@ export class AdminsService {
     return admin;
   }
 
-  async update(id: string, dto: AtualizarAdministradorDto, updatedBy: string) {
+  async atualizar(id: string, dto: AtualizarAdministradorDto, updatedBy: string) {
     const admin = await this.prisma.administrador.findUnique({ where: { id } });
     if (!admin) throw new NotFoundException('Administrador não localizado.');
 
@@ -108,7 +108,7 @@ export class AdminsService {
     return updated;
   }
 
-  async remove(id: string, deletedBy: string) {
+  async remover(id: string, deletedBy: string) {
     const admin = await this.prisma.administrador.findUnique({ where: { id } });
     if (!admin) throw new NotFoundException('Administrador não localizado.');
 
@@ -117,7 +117,7 @@ export class AdminsService {
     return { message: 'Administrador excluído com sucesso.' };
   }
 
-  async resetPassword(id: string, requestedBy: string) {
+  async resetarSenha(id: string, requestedBy: string) {
     const admin = await this.prisma.administrador.findUnique({ where: { id } });
     if (!admin) throw new NotFoundException('Administrador não localizado.');
 
@@ -134,7 +134,7 @@ export class AdminsService {
     return { tempPassword };
   }
 
-  async toggleActive(id: string, isActive: boolean, updatedBy: string) {
+  async alternarAtivo(id: string, isActive: boolean, updatedBy: string) {
     const admin = await this.prisma.administrador.findUnique({ where: { id } });
     if (!admin) throw new NotFoundException('Administrador não localizado.');
 

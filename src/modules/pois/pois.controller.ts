@@ -1,43 +1,54 @@
-import { Controller, Post, Param, Body, UseGuards, Get, Query, Patch, Delete} from "@nestjs/common";
-import { PoisService } from "./pois.service";
-import { PoiDto } from "./dto/criar-poi.dto";
-import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
-import { PermissionsGuard } from "src/auth/guards/permissions.guard";
-import { Permissao } from "src/common/decorators/permissao.decorator";
-import { Usuario } from "src/common/decorators/usuario.decorator";
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, HttpCode } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { PermissionsGuard } from 'src/auth/guards/permissions.guard';
+import { Permissao } from 'src/common/decorators/permissao.decorator';
+import { Usuario } from 'src/common/decorators/usuario.decorator';
+import { PoisService } from './pois.service';
+import { CriarPoiDto } from './dto/criar-poi.dto';
+import { AtualizarPoiDto, filtrarPoiDto } from './dto/atualizar-poi.dto';
 
-@Controller('estabelecimentos/:estabelecimentoId/pois')
+
 @UseGuards(JwtAuthGuard, PermissionsGuard)
+@Controller('estabelecimentos/:eid/pois')
 export class PoisController {
-    constructor( private service: PoisService ) {}
+  constructor(private service: PoisService) {}
 
-    @Post()
-    @Permissao('gerenciar_pois')
-    create(@Param('estabelecimentoId') estabelecimentoId: string, @Body() dto: PoiDto, @Usuario() user: any) {
-        return this.service.create(dto, estabelecimentoId, user.userId);
-    }
+  @Post()
+  criar(
+    @Param('eid') eid: string,
+    @Body() dto: CriarPoiDto,
+    @Usuario() user: any,
+  ) {
+    return this.service.criar(dto, eid, user.userId);
+  }
 
-    @Get()
-    findAll(@Param('estabelecimentoId') estabelecimentoId: string, @Query() filtros: any) {
-        return this.service.findAll(estabelecimentoId, filtros);
-    }
+  @Get()
+  findAll(@Param('eid') eid: string, @Query() filtros: filtrarPoiDto) {
+    return this.service.findAll(eid, filtros);
+  }
 
-    @Get(':id')
-    findOne(@Param('estabelecimentoId') estabelecimentoId: string, @Param('id') id: string) {
-        return this.service.findOne(id, estabelecimentoId);
-    }
-    
-    @Patch(':id')
-    @Permissao('gerenciar_pois')
-    update(@Param('estabelecimentoId') estabelecimentoId: string, @Param('id') id: string, @Body() dto: Partial<PoiDto>, @Usuario() user: any) {
-        return this.service.update(id, dto, estabelecimentoId, user.userId);
-    }
+  @Get(':id')
+  findOne(@Param('eid') eid: string, @Param('id') id: string) {
+    return this.service.findOne(id, eid);
+  }
 
-    @Delete(':id')
-    @Permissao('gerenciar_pois')
-    remove(@Param('estabelecimentoId') estabelecimentoId: string, @Param('id') id: string) {
-        return this.service.remove(id, estabelecimentoId);
-    }
+  @Patch(':id')
+  atualizar(
+    @Param('eid') eid: string,
+    @Param('id') id: string,
+    @Body() dto: AtualizarPoiDto,
+    @Usuario() user: any,
+  ) {
+    return this.service.atualizar(id, dto, eid, user.userId);
+  }
+
+  @Delete(':id')
+  @HttpCode(200)
+  remover(
+    @Param('eid') eid: string,
+    @Param('id') id: string,
+    @Usuario() user: any,
+  ) {
+    return this.service.remover(id, eid, user.userId);
+  }
 }
-
-
