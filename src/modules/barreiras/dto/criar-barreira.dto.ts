@@ -1,5 +1,5 @@
 import { IsString, Length, IsEnum, IsOptional, IsDateString, IsObject, IsBoolean, ValidateIf } from 'class-validator';
-import { SeveridadeBarreira, Visibilidade } from '@prisma/client';
+import {Prisma , SeveridadeBarreira, Visibilidade } from '@prisma/client';
 
 export const TIPO_BARREIRA = [
   'area_interditada',
@@ -30,8 +30,8 @@ export class CriarBarreiraDto {
   andar!: string;
 
   @IsObject({ message: 'Posição inválida para este andar.' })
-  posicao!: Record<string, unknown>;
-
+  posicao!: Prisma.InputJsonValue;
+  
   @IsEnum(SeveridadeBarreira, { message: 'Severidade inválida.' })
   severidade!: SeveridadeBarreira;
 
