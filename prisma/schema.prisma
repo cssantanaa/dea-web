@@ -6,6 +6,94 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum StatusEstabelecimento {
+  rascunho
+  ativo
+  inativo
+  encerrado
+}
+
+enum TipoOperacao {
+  permanente
+  evento
+}
+
+enum CategoriaEstabelecimento {
+  shopping
+  faculdade
+  hospital
+  estadio
+  centro_de_convencoes
+  escritorio
+  industria
+  outros
+}
+
+enum StatusConfiguracaoMapa {
+  pendente
+  em_configuracao
+  publicado
+}
+
+enum TipoPoi {
+  DEA
+  extintor
+  saida_emergencia
+  escada
+  elevador
+  rampa
+  ponto_encontro
+  posto_medico
+  hidrante
+  outro
+}
+
+enum Disponibilidade {
+  ativo
+  inativo
+  em_manutencao
+}
+
+enum Visibilidade {
+  publico
+  somente_socorristas
+}
+
+enum Acessibilidade {
+  acessivel
+  nao_acessivel
+  desconhecido
+}
+
+enum ModoGeracao {
+  automatico
+  manual
+}
+
+enum StatusCodigo {
+  ativo
+  revogado
+  expirado
+}
+
+enum StatusBarreira {
+  agendada
+  ativa
+  inativa
+  encerrada
+}
+
+enum SeveridadeBarreira {
+  informativa
+  atencao
+  critico
+}
+
+enum ResultadoAuditoria {
+  sucesso
+  falha
+}
+
 model Estabelecimento{
   id String @id @default(cuid())
   nome String @db.VarChar(100)
@@ -123,7 +211,7 @@ model CodigoAcesso{
   estabelecimento Estabelecimento @relation(fields:[estabelecimentoId],references:[id])
 
   codigo String @db.VarChar(6)
-  modoGeracao String @db.VarChar(10) @default("automatico")
+  modoGeracao ModoGeracao @default(automatico)
   descricao String? @db.VarChar(60)
   validoDe DateTime?
   validoAte DateTime?
