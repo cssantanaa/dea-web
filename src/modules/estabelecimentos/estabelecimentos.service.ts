@@ -12,7 +12,7 @@ export class EstabelecimentoService {
     private prisma: PrismaService,
   ) {}
 
-  async create(dto: CriarEstabelecimentoDto, userId: string) {
+  async criar(dto: CriarEstabelecimentoDto, userId: string) {
     if (dto.tipoOperacao === 'evento') {
       if (!dto.dataInicioEvento || !dto.dataFimEvento) {
         throw new BadRequestException('Informe início e fim do evento.');
@@ -69,7 +69,7 @@ export class EstabelecimentoService {
     return estabelecimento;
   }
 
-  async update(id: string, dto: AtualizarEstabelecimentoDto, userId: string) {
+  async atualizar(id: string, dto: AtualizarEstabelecimentoDto, userId: string) {
     const estabelecimento = await this.findOne(id);
 
     if (estabelecimento.status === 'encerrado') {
@@ -94,7 +94,7 @@ export class EstabelecimentoService {
     return atualizado;
   }
 
-  async setStatus(id: string, status: StatusEstabelecimento, userId: string) {
+  async definirStatus(id: string, status: StatusEstabelecimento, userId: string) {
     await this.findOne(id);
     const atualizado = await this.prisma.estabelecimento.update({
       where: { id },
@@ -105,7 +105,7 @@ export class EstabelecimentoService {
     return atualizado;
   }
 
-  async FecharEstabelecimentoExpirados() {
+  async EncerrarEstabelecimentosExpirados() {
     return this.prisma.estabelecimento.updateMany({
       where: {
         tipoOperacao: 'evento',

@@ -5,8 +5,8 @@
 // import { EstablishmentsService } from '../establishments/establishments.service';
 
 // @Injectable()
-// export class BarriersScheduler {
-//   private readonly logger = new Logger(BarriersScheduler.name);
+// export class BarreirasScheduler {
+//   private readonly logger = new Logger(BarreirasScheduler.name);
 
 //   constructor(
 //     private barriers: BarriersService,
@@ -27,7 +27,7 @@
 
 //       if (
 //         activatedBarriers.count > 0 ||
-//         closedBarriers.count > 0 ||
+//         closedBarriersa.count > 0 ||
 //         expiredCodes.count > 0 ||
 //         closedEvents.count > 0
 //       ) {

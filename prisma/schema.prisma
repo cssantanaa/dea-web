@@ -261,8 +261,8 @@ model Barreira{
   posicao Json
   severidade SeveridadeBarreira @default(informativa)
   visibilidade Visibilidade @default(publico)
-  inicioPeriodo DateTime
-  fimPeriodo DateTime?
+  periodoInicial DateTime
+  periodoFinal DateTime?
   status StatusBarreira @default(agendada)
   mensagemCurta String? @db.VarChar(120)
   ativadoEm DateTime?

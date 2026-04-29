@@ -16,8 +16,8 @@ export class EstabelecimentosController {
   constructor(private service: EstabelecimentoService) {}
 
   @Post()
-  create(@Body() dto: CriarEstabelecimentoDto, @Usuario() user: any) {
-    return this.service.create(dto, user.userId);
+  criar(@Body() dto: CriarEstabelecimentoDto, @Usuario() user: any) {
+    return this.service.criar(dto, user.userId);
   }
 
   @Get()
@@ -31,21 +31,21 @@ export class EstabelecimentosController {
   }
 
   @Patch(':id')
-  update(
+  atualizar(
     @Param('id') id: string,
     @Body() dto: AtualizarEstabelecimentoDto,
     @Usuario() user: any,
   ) {
-    return this.service.update(id, dto, user.userId);
+    return this.service.atualizar(id, dto, user.userId);
   }
 
   @Patch(':id/status')
   @HttpCode(200)
-  setStatus(
+  definirStatus(
     @Param('id') id: string,
     @Body() dto: StatusEstabelecimento,
     @Usuario() user: any,
   ) {
-    return this.service.setStatus(id, dto, user.userId);
+    return this.service.definirStatus(id, dto, user.userId);
   }
 }
