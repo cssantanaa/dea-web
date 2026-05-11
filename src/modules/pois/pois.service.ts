@@ -11,7 +11,7 @@ export class PoisService {
     // private audit: AuditService,
   ) {}
 
-  private async AcessoEstabelecimento(estabelecimentoId: string) {
+  private async validarAcessoEstabelecimento(estabelecimentoId: string) {
     const est = await this.prisma.estabelecimento.findUnique({
       where: { id: estabelecimentoId },
     });
@@ -22,8 +22,8 @@ export class PoisService {
     return est;
   }
 
-  async criar(dto: CriarPoiDto, estabelecimentoId: string, createdBy: string) {
-    await this.AcessoEstabelecimento(estabelecimentoId);
+  async criarPois(dto: CriarPoiDto, estabelecimentoId: string, createdBy: string) {
+    await this.validarAcessoEstabelecimento(estabelecimentoId);
 
     const existe = await this.prisma.poi.findFirst({
       where: {
@@ -48,7 +48,7 @@ export class PoisService {
     return poi;
   }
 
-  async findAll(estabelecimentoId: string, filtros: filtrarPoiDto) {
+  async listarPois(estabelecimentoId: string, filtros: filtrarPoiDto) {
     return this.prisma.poi.findMany({
       where: {
         estabelecimentoId,
@@ -61,14 +61,14 @@ export class PoisService {
     });
   }
 
-  async findOne(id: string, estabelecimentoId: string) {
+  async buscarPoisPorId(id: string, estabelecimentoId: string) {
     const poi = await this.prisma.poi.findFirst({ where: { id, estabelecimentoId } });
     if (!poi) throw new NotFoundException('POI não encontrado.');
     return poi;
   }
 
-  async atualizar(id: string, dto: AtualizarPoiDto, estabelecimentoId: string, updatedBy: string) {
-    const poi = await this.findOne(id, estabelecimentoId);
+  async atualizarPois(id: string, dto: AtualizarPoiDto, estabelecimentoId: string, updatedBy: string) {
+    const poi = await this.buscarPoisPorId(id, estabelecimentoId);
 
     // Verifica duplicidade de nome se nome ou andar foram alterados
       const novoNome = dto.nome ?? poi.nome;
@@ -94,8 +94,8 @@ export class PoisService {
       return atualizado;
   }
 
-  async remover(id: string, estabelecimentoId: string, deletadoPor: string) {
-    await this.findOne(id, estabelecimentoId);
+  async removerPois(id: string, estabelecimentoId: string, deletadoPor: string) {
+    await this.buscarPoisPorId(id, estabelecimentoId);
 
   //   // RF021: POI com histórico recente não pode ser excluído — apenas inativado.
   //   // Descomente quando a tabela de ocorrências estiver disponível:

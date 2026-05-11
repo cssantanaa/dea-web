@@ -33,7 +33,7 @@ export class SocorristasService {
     // private audit: AuditService,
   ) {}
 
-  async criar(dto: CriarSocorristaDto, estabelecimentoId: string, criadoPor: string) {
+  async criarSocorrista(dto: CriarSocorristaDto, estabelecimentoId: string, criadoPor: string) {
     const existe = await this.prisma.socorrista.findFirst({
       where: { usuario: dto.usuario, estabelecimentoId },
     });
@@ -58,7 +58,7 @@ export class SocorristasService {
     return socorrista;
   }
 
-  async findAll(estabelecimentoId: string, filtros: FiltrarSocorristasDto) {
+  async listarSocorristas(estabelecimentoId: string, filtros: FiltrarSocorristasDto) {
     return this.prisma.socorrista.findMany({
       where: {
         estabelecimentoId,
@@ -72,7 +72,7 @@ export class SocorristasService {
     });
   }
 
-  async findOne(id: string, estabelecimentoId: string) {
+  async buscarSocorristaPorId(id: string, estabelecimentoId: string) {
     const socorrista = await this.prisma.socorrista.findFirst({
       where: { id, estabelecimentoId: estabelecimentoId },
       select: selecao_segura,
@@ -81,8 +81,8 @@ export class SocorristasService {
     return socorrista;
   }
 
-  async atualizar(id: string, dto: AtualizarSocorristaDto, estabelecimentoId: string, AtualizadoPor: string) {
-    await this.findOne(id, estabelecimentoId);
+  async atualizarSocorrista(id: string, dto: AtualizarSocorristaDto, estabelecimentoId: string, AtualizadoPor: string) {
+    await this.buscarSocorristaPorId(id, estabelecimentoId);
 
     const atualizado = await this.prisma.socorrista.update({
       where: { id },
@@ -93,8 +93,8 @@ export class SocorristasService {
     return atualizado;
   }
 
-  async remover(id: string, estabelecimentoId: string, deletedBy: string) {
-    await this.findOne(id, estabelecimentoId);
+  async removerSocorrista(id: string, estabelecimentoId: string, deletedBy: string) {
+    await this.buscarSocorristaPorId(id, estabelecimentoId);
 
     // RF022: bloquear exclusão com ocorrências em aberto
     // Descomente quando a tabela de ocorrências estiver disponível:
@@ -112,8 +112,8 @@ export class SocorristasService {
     return { message: 'Socorrista excluído com sucesso.' };
   }
 
-  async resetarSenha(id: string, estabelecimentoId: string, solicitadoPor: string) {
-    await this.findOne(id, estabelecimentoId);
+  async resetarSenhaSocorrista(id: string, estabelecimentoId: string, solicitadoPor: string) {
+    await this.buscarSocorristaPorId(id, estabelecimentoId);
 
     const senhaTemporaria = gerarSenhaTemporaria();
     const passwordHash = await bcrypt.hash(senhaTemporaria, 12);
@@ -126,8 +126,8 @@ export class SocorristasService {
     return { senhaTemporaria };
   }
 
-  async alternarAtivo(id: string, estabelecimentoId: string, ativo: boolean, atualizadoPor: string) {
-    await this.findOne(id, estabelecimentoId);
+  async alternarAtivoSocorrista(id: string, estabelecimentoId: string, ativo: boolean, atualizadoPor: string) {
+    await this.buscarSocorristaPorId(id, estabelecimentoId);
 
     const atualizado = await this.prisma.socorrista.update({
       where: { id },

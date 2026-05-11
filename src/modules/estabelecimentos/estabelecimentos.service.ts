@@ -7,12 +7,12 @@ import { StatusEstabelecimento } from '@prisma/client';
 
 
 @Injectable()
-export class EstabelecimentoService {
+export class EstabelecimentosService {
   constructor(
     private prisma: PrismaService,
   ) {}
 
-  async criar(dto: CriarEstabelecimentoDto, userId: string) {
+  async criarEstabelecimento(dto: CriarEstabelecimentoDto, userId: string) {
     if (dto.tipoOperacao === 'evento') {
       if (!dto.dataInicioEvento || !dto.dataFimEvento) {
         throw new BadRequestException('Informe início e fim do evento.');
@@ -36,7 +36,7 @@ export class EstabelecimentoService {
     return estabelecimento;
   }
 
-  async findAll(filtros: FiltrarEstabelecimentoDto) {
+  async listarEstabelecimentos(filtros: FiltrarEstabelecimentoDto) {
     return this.prisma.estabelecimento.findMany({
       where: {
         ...(filtros.status && { status: filtros.status }),
@@ -63,14 +63,14 @@ export class EstabelecimentoService {
     });
   }
 
-  async findOne(id: string) {
+  async buscarEstabelecimentoPorId(id: string) {
     const estabelecimento = await this.prisma.estabelecimento.findUnique({ where: { id } });
     if (!estabelecimento) throw new NotFoundException('Estabelecimento não encontrado.');
     return estabelecimento;
   }
 
-  async atualizar(id: string, dto: AtualizarEstabelecimentoDto, userId: string) {
-    const estabelecimento = await this.findOne(id);
+  async atualizarEstabelecimento(id: string, dto: AtualizarEstabelecimentoDto, userId: string) {
+    const estabelecimento = await this.buscarEstabelecimentoPorId(id);
 
     if (estabelecimento.status === 'encerrado') {
       throw new ForbiddenException('Estabelecimentos encerrados não podem ser editados.');
@@ -94,8 +94,8 @@ export class EstabelecimentoService {
     return atualizado;
   }
 
-  async definirStatus(id: string, status: StatusEstabelecimento, userId: string) {
-    await this.findOne(id);
+  async alterarStatusEstabelecimento(id: string, status: StatusEstabelecimento, userId: string) {
+    await this.buscarEstabelecimentoPorId(id);
     const atualizado = await this.prisma.estabelecimento.update({
       where: { id },
       data: { status, atualizadoPor: userId },
@@ -105,7 +105,7 @@ export class EstabelecimentoService {
     return atualizado;
   }
 
-  async EncerrarEstabelecimentosExpirados() {
+  async encerrarEstabelecimentosExpirados() {
     return this.prisma.estabelecimento.updateMany({
       where: {
         tipoOperacao: 'evento',

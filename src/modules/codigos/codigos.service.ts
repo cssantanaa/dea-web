@@ -9,16 +9,14 @@ import { StatusCodigo } from '@prisma/client';
 export class CodigosService {
   constructor(private prisma: PrismaService) {}
 
-  async criar(dto: CriarCodigoDto, estabelecimentoId: string, criadoPor: string ) {
+  async criarCodigo(dto: CriarCodigoDto, estabelecimentoId: string, criadoPor: string) {
     this.validarDatas(dto);
 
     let valorCodigo: string;
 
     if (dto.modoGeracao === 'manual') {
       if (!dto.codigo) {
-        throw new BadRequestException(
-          'Informe o valor do código no modo manual.',
-        );
+        throw new BadRequestException('Informe o valor do código no modo manual.');
       }
 
       await this.verificarDuplicidade(estabelecimentoId, dto.codigo);
@@ -38,7 +36,7 @@ export class CodigosService {
       };
     }
 
-    return this.persistirCodigo(
+    return this.criarCodigoAcesso(
       valorCodigo,
       dto,
       estabelecimentoId,
@@ -47,7 +45,7 @@ export class CodigosService {
     );
   }
 
-  async confirmarSubstituicao(
+  async confirmarSubstituicaoCodigo(
     dto: ConfirmarSubstituicaoDto,
     estabelecimentoId: string,
     criadoPor: string,
@@ -70,7 +68,7 @@ export class CodigosService {
         data: { status: 'revogado', atualizadoPor: criadoPor },
       });
 
-      return this.persistirCodigoTx(
+      return this.criarCodigoAcessoTransacional(
         tx,
         dto.codigo,
         dto,
@@ -81,7 +79,7 @@ export class CodigosService {
     });
   }
 
-  async criarComoRevogado(
+  async criarCodigoRevogado(
     dto: CriarCodigoDto,
     estabelecimentoId: string,
     criadoPor: string,
@@ -91,7 +89,7 @@ export class CodigosService {
         ? dto.codigo
         : await this.gerarCodigoUnico(estabelecimentoId);
 
-    return this.persistirCodigo(
+    return this.criarCodigoAcesso(
       valorCodigo,
       dto,
       estabelecimentoId,
@@ -100,17 +98,11 @@ export class CodigosService {
     );
   }
 
-  async revogar(
-    id: string,
-    estabelecimentoId: string,
-    atualizadoPor: string,
-  ) {
-    const codigo = await this.buscarPorId(id, estabelecimentoId);
+  async revogar(id: string, estabelecimentoId: string, atualizadoPor: string) {
+    const codigo = await this.buscarCodigoPorId(id, estabelecimentoId);
 
     if (codigo.status !== 'ativo') {
-      throw new BadRequestException(
-        'Somente códigos ativos podem ser revogados.',
-      );
+      throw new BadRequestException('Somente códigos ativos podem ser revogados.');
     }
 
     return this.prisma.codigoAcesso.update({
@@ -119,17 +111,11 @@ export class CodigosService {
     });
   }
 
-  async reativar(
-    id: string,
-    estabelecimentoId: string,
-    atualizadoPor: string,
-  ) {
-    const codigo = await this.buscarPorId(id, estabelecimentoId);
+  async reativar(id: string, estabelecimentoId: string, atualizadoPor: string) {
+    const codigo = await this.buscarCodigoPorId(id, estabelecimentoId);
 
     if (codigo.status === 'expirado') {
-      throw new BadRequestException(
-        'Este código está expirado e não pode ser reativado.',
-      );
+      throw new BadRequestException('Este código está expirado e não pode ser reativado.');
     }
 
     if (codigo.status === 'ativo') {
@@ -153,9 +139,7 @@ export class CodigosService {
     });
 
     if (!codigo?.imagemQr) {
-      throw new NotFoundException(
-        'QR Code não disponível para este código.',
-      );
+      throw new NotFoundException('QR Code não disponível para este código.');
     }
 
     return {
@@ -181,24 +165,15 @@ export class CodigosService {
     });
   }
 
-  // ======================
-  // MÉTODOS PRIVADOS
-  // ======================
-
   private validarDatas(dto: CriarCodigoDto | ConfirmarSubstituicaoDto) {
     if (dto.validoDe && dto.validoAte) {
       if (new Date(dto.validoAte) <= new Date(dto.validoDe)) {
-        throw new BadRequestException(
-          'A data final deve ser posterior à inicial.',
-        );
+        throw new BadRequestException('A data final deve ser posterior à inicial.');
       }
     }
   }
 
-  private async verificarDuplicidade(
-    estabelecimentoId: string,
-    codigo: string,
-  ) {
+  private async verificarDuplicidade(estabelecimentoId: string, codigo: string) {
     const existente = await this.prisma.codigoAcesso.findUnique({
       where: {
         estabelecimentoId_codigo: { estabelecimentoId, codigo },
@@ -206,9 +181,7 @@ export class CodigosService {
     });
 
     if (existente) {
-      throw new ConflictException(
-        'Código já utilizado neste estabelecimento.',
-      );
+      throw new ConflictException('Código já utilizado neste estabelecimento.');
     }
   }
 
@@ -219,7 +192,7 @@ export class CodigosService {
     });
   }
 
-  private async buscarPorId(id: string, estabelecimentoId: string) {
+  private async buscarCodigoPorId(id: string, estabelecimentoId: string) {
     const codigo = await this.prisma.codigoAcesso.findFirst({
       where: { id, estabelecimentoId },
     });
@@ -227,11 +200,10 @@ export class CodigosService {
     if (!codigo) {
       throw new NotFoundException('Código não localizado.');
     }
-
     return codigo;
   }
 
-  private async persistirCodigo(
+  private async criarCodigoAcesso(
     valorCodigo: string,
     dto: CriarCodigoDto | ConfirmarSubstituicaoDto,
     estabelecimentoId: string,
@@ -262,7 +234,7 @@ export class CodigosService {
     });
   }
 
-  private async persistirCodigoTx(
+  private async criarCodigoAcessoTransacional(
     tx: any,
     valorCodigo: string,
     dto: ConfirmarSubstituicaoDto,
@@ -294,9 +266,7 @@ export class CodigosService {
     });
   }
 
-  private async gerarCodigoUnico(
-    estabelecimentoId: string,
-  ): Promise<string> {
+  private async gerarCodigoUnico(estabelecimentoId: string): Promise<string> {
     const caracteres =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
@@ -317,6 +287,6 @@ export class CodigosService {
       if (!existe) return candidato;
     }
 
-    throw new BadRequestException( 'Não foi possível gerar um código único.' );
+    throw new BadRequestException('Não foi possível gerar um código único.');
   }
 }

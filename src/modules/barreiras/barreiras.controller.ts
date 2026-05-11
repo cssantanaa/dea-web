@@ -1,5 +1,5 @@
 import {Controller, Get, Post, Patch, Body, Param, Query, UseGuards, HttpCode } from '@nestjs/common';
-// import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PermissionsGuard } from 'src/auth/guards/permissions.guard';
 import { Permissao } from 'src/common/decorators/permissao.decorator';
@@ -10,7 +10,7 @@ import { AtualizarBarreiraDto } from './dto/atualizar-barreira.dto';
 import { FiltrarBarreiraDto } from './dto/filtrar-barreira.dto';
 import { AlterarStatusBarreiraDto } from './dto/alternar-status-barreira.dto';
 
-
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('estabelecimentos/:eid/barreiras')
 export class BarreiraController {
@@ -23,33 +23,33 @@ export class BarreiraController {
     @Body() dto: CriarBarreiraDto,
     @Usuario() user: any,
   ) {
-    return this.service.create(dto, eid, user.userId);
+    return this.service.criar(dto, eid, user.userId);
   }
 
   @Get()
-  findAll(@Param('eid') eid: string, @Query() filters: FiltrarBarreiraDto) {
-    return this.service.findAll(eid, filters);
+  listarBarreiras(@Param('eid') eid: string, @Query() filtros: FiltrarBarreiraDto) {
+    return this.service.listarBarreiras(eid, filtros);
   }
 
   @Get('ativos')
-  findActive(@Param('eid') eid: string) {
-    return this.service.findActive(eid);
+  listarAtivas(@Param('eid') eid: string) {
+    return this.service.listarAtivas(eid);
   }
 
   @Get(':id')
-  findOne(@Param('eid') eid: string, @Param('id') id: string) {
-    return this.service.findOne(id, eid);
+  buscarPorId(@Param('eid') eid: string, @Param('id') id: string) {
+    return this.service.buscarPorId(id, eid);
   }
 
   @Patch(':id')
   @Permissao('gerenciar_barreiras')
-  update(
+  atualizar(
     @Param('eid') eid: string,
     @Param('id') id: string,
     @Body() dto: AtualizarBarreiraDto,
     @Usuario() user: any,
   ) {
-    return this.service.update(id, dto, eid, user.userId);
+    return this.service.atualizar(id, dto, eid, user.userId);
   }
 
   @Patch(':id/alternar-status')
@@ -61,17 +61,17 @@ export class BarreiraController {
     @Body() dto: AlterarStatusBarreiraDto,
     @Usuario() user: any,
   ) {
-    return this.service.alternarStatus(id, eid, dto.ativo, user.userId);
+    return this.service.alternarStatusBarreira(id, eid, dto.ativo, user.userId);
   }
 
   @Patch(':id/close')
   @Permissao('gerenciar_barreiras')
   @HttpCode(200)
-  closeBarrier(
+  fecharBarreira(
     @Param('eid') eid: string,
     @Param('id') id: string,
     @Usuario() user: any,
   ) {
-    return this.service.closeBarrier(id, eid, user.userId);
+    return this.service.fecharBarreira(id, eid, user.userId);
   }
 }

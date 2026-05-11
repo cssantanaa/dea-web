@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Patch, Body, Param, UseGuards, HttpCode } from '@nestjs/common';
-import { ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PermissionsGuard } from 'src/auth/guards/permissions.guard';
 import { Permissao } from 'src/common/decorators/permissao.decorator';
@@ -16,25 +16,23 @@ export class CodigosController {
 
   @Post()
   @Permissao('gerar_codigos_qr')
-  @ApiOperation({ summary: 'Criar novo código' })
-  criar(
+  criarCodigo(
     @Param('estabelecimentoId') estabelecimentoId: string,
     @Body() dto: CriarCodigoDto,
     @Usuario() usuario: any,
   ) {
-    return this.service.criar(dto, estabelecimentoId, usuario.userId);
+    return this.service.criarCodigo(dto, estabelecimentoId, usuario.userId);
   }
 
   @Post('confirmar-substituicao')
   @Permissao('gerar_codigos_qr')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Confirmar substituição de código ativo' })
-  confirmarSubstituicao(
+  confirmarSubstituicaoCodigo(
     @Param('estabelecimentoId') estabelecimentoId: string,
     @Body() dto: ConfirmarSubstituicaoDto,
     @Usuario() usuario: any,
   ) {
-    return this.service.confirmarSubstituicao(
+    return this.service.confirmarSubstituicaoCodigo(
       dto,
       estabelecimentoId,
       usuario.userId,
@@ -44,16 +42,12 @@ export class CodigosController {
   @Post('criar-revogado')
   @Permissao('gerar_codigos_qr')
   @HttpCode(201)
-  @ApiOperation({
-    summary:
-      'Criar código já revogado (sem afetar o código ativo atual)',
-  })
-  criarRevogado(
+  criarCodigoRevogado(
     @Param('estabelecimentoId') estabelecimentoId: string,
     @Body() dto: CriarCodigoDto,
     @Usuario() usuario: any,
   ) {
-    return this.service.criarComoRevogado(
+    return this.service.criarCodigoRevogado(
       dto,
       estabelecimentoId,
       usuario.userId,
@@ -61,15 +55,11 @@ export class CodigosController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar códigos do estabelecimento' })
   listar(@Param('estabelecimentoId') estabelecimentoId: string) {
     return this.service.listar(estabelecimentoId);
   }
 
   @Get(':id/qr')
-  @ApiOperation({
-    summary: 'Obter QR Code de um código ativo',
-  })
   obterQrCode(
     @Param('estabelecimentoId') estabelecimentoId: string,
     @Param('id') id: string,
@@ -80,7 +70,6 @@ export class CodigosController {
   @Patch(':id/revogar')
   @Permissao('gerar_codigos_qr')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Revogar código ativo' })
   revogar(
     @Param('estabelecimentoId') estabelecimentoId: string,
     @Param('id') id: string,
@@ -92,7 +81,6 @@ export class CodigosController {
   @Patch(':id/reativar')
   @Permissao('gerar_codigos_qr')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Reativar código' })
   reativar(
     @Param('estabelecimentoId') estabelecimentoId: string,
     @Param('id') id: string,

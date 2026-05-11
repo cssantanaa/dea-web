@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, HttpCode} from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { TipoUsuarioGuard } from 'src/auth/guards/tipo-usuario.guard';
 import { TipoUsuario } from 'src/common/decorators/tipos.decorator';
@@ -9,6 +10,7 @@ import { AtualizarAdministradorDto } from './dto/atualizar-administrador.dto';
 import { AlternarAtivoDto } from './dto/alternar-ativo.dto';
 import { FiltrarAdminDto } from './dto/filtrar-admin.dto';
 
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard, TipoUsuarioGuard)
 @TipoUsuario(['super_admin'])
 @Controller('admins')
